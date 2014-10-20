@@ -8,15 +8,12 @@ use syntax::ext::quote::rt::ExtParseUtils;
 use syntax::ext::build::AstBuilder;
 use model::{ModelState};
 
-/// Trait meaning something can be turned into an ast::Item with configuration.
 pub trait Generate<Cfg> {
-    /// Turn Self into an ast::Item with a configuration object.
     fn generate<'a>(self, codemap::Span, &mut base::ExtCtxt, Cfg) -> Box<base::MacResult + 'a>;
 }
 
 impl Generate<()> for ModelState {
     fn generate<'a>(self, sp: codemap::Span, cx: &mut base::ExtCtxt, _: ()) -> Box<base::MacResult + 'a> {
-        // Get the name of this mod.
         let name = self.mod_name.clone();
         let struct_name = self.model.ident.clone();
 
@@ -77,6 +74,6 @@ impl Generate<()> for ModelState {
             span: sp
         });
 
-        base::MacItems::new(vec![self.model, impl_mac].into_iter())
+        base::MacItems::new(vec![impl_mac].into_iter())
     }
 }

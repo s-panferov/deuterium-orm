@@ -10,6 +10,8 @@ extern crate rustc;
 use rustc::plugin;
 use syntax::parse::token;
 
+use std::default::Default;
+
 use model::model;
 
 mod model;
@@ -23,9 +25,41 @@ pub fn plugin_registrar(reg: &mut plugin::Registry) {
         syntax::ext::base::IdentTT(box model, None));
 }
 
+
+pub enum FieldValue<T> {
+    Unknown,
+    Known(T)
+}
+
+impl<T> Default for FieldValue<T> {
+    fn default () -> FieldValue<T> {
+        Unknown
+    }
+}
+
+#[macro_export]
+macro_rules! create_model(
+    ($model:ident, $($field_name:ident: $field_value:expr),+) => (
+        $model {
+            $(
+                $field_name: deuterium_orm::Known($field_value),
+            )+
+
+            ..std::default::Default::default()
+        }
+    )
+)
+
 #[macro_export]
 macro_rules! define_model {
     ($model:ident, $table:ident, $table_inst:ident, $table_name:expr, [ $(($field_name:ident, $field_type:ty)),+ ]) => (
+
+        #[deriving(Default)]
+        struct $model {
+            $(
+                $field_name: FieldValue<$field_type>,
+            )+  
+        }
 
         struct $table;
 
