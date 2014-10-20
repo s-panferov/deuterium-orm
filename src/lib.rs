@@ -42,29 +42,11 @@ macro_rules! define_model {
             }
 
             $(
-                pub fn $field_name(&self) -> NamedField<$field_type> {
-                    match &self.table_alias_ {
-                        &Some(ref alias) => NamedField::<$field_type>::new_qual(stringify!($field_name), alias.as_slice()),
-                        &None => NamedField::<$field_type>::new(stringify!($field_name))
-                    }
+                pub fn $field_name() -> NamedField<$field_type> {
+                    NamedField::<$field_type>::new(stringify!($field_name))
                 }
-            )+    
-        }
-
-        impl ToOrmTable<$table> for $model {
-            fn table() -> $table {
-                $table::new()
-            }
-
-            fn alias(alias: String) -> $table {
-                $table::alias(alias)
-            }
+            )+   
         }
         
     )
-}
-
-pub trait ToOrmTable<T> {
-    fn table() -> T;
-    fn alias(alias: String) -> T;
 }

@@ -8,7 +8,6 @@ extern crate time;
 extern crate deuterium;
 
 use deuterium::*;
-use deuterium_orm::{ToOrmTable};
 
 use std::default::Default;
 use time::Timespec;
@@ -24,7 +23,13 @@ deuterium_model! jedi {
     }
 }
 
+impl Jedi {
+    pub fn new() -> uint {
+        1u
+    }
+}
+
 #[test]
 fn test() {
-    let table = JediTable::new();
+    let table = JediTable::name();
 }
