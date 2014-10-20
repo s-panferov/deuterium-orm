@@ -1,8 +1,5 @@
 use syntax::{ast, codemap};
 use syntax::ext::base;
-use syntax::parse::token;
-
-use syntax::ptr::P;
 use syntax::parse::parser::Parser;
 
 use model::{ModelState};
@@ -15,7 +12,7 @@ pub trait Parse<Cfg> {
 
 impl<'a, 'b> Parse<(codemap::Span, &'a mut base::ExtCtxt<'b>, Option<ast::Ident>)> for ModelState {
     fn parse(parser: &mut Parser,
-             (sp, cx, name): (codemap::Span, &'a mut base::ExtCtxt, Option<ast::Ident>)) -> ModelState {
+             (_sp, _cx, name): (codemap::Span, &'a mut base::ExtCtxt, Option<ast::Ident>)) -> ModelState {
 
         let name = match name {
             // Top-level describe block.

@@ -1,7 +1,6 @@
-use syntax::{ast, abi, ast_util, codemap};
+use syntax::{ast, ast_util, codemap};
 use syntax::ptr::P;
 use syntax::ext::base;
-use syntax::parse::token;
 use syntax::owned_slice::OwnedSlice;
 use syntax::codemap::Spanned;
 use syntax::ext::quote::rt::ExtParseUtils;
@@ -22,7 +21,6 @@ impl Generate<()> for ModelState {
         let struct_name = self.model.ident.clone();
 
         let ts_name = struct_name.name.as_str().to_string() + "Table".to_string();
-        let ts_ident = cx.ident_of(ts_name.as_slice());
         
         let model_struct_def = match &self.model.node {
             &ast::ItemStruct(ref model_struct_def, _) => model_struct_def.clone(),

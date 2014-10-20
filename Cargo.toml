@@ -11,6 +11,7 @@ plugin = true
 
 [dependencies.deuterium]
 git = "https://github.com/s-panferov/deuterium.git"
+# path = "../deuterium"
 
 [[test]]
 name = "tests"
