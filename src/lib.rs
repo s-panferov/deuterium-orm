@@ -1,6 +1,7 @@
 #![license = "MIT"]
 #![feature(plugin_registrar, quote)]
 #![feature(tuple_indexing)]
+#![feature(macro_rules)]
 
 extern crate syntax;
 extern crate rustc;
@@ -21,17 +22,49 @@ pub fn plugin_registrar(reg: &mut plugin::Registry) {
         syntax::ext::base::IdentTT(box model, None));
 }
 
-// pub trait OrmTable {
-//     fn new() -> OrmTable;
-//     fn new_with_alias(String) -> OrmTable;
-// }
+#[macro_export]
+macro_rules! define_model {
+    ($model:ident, $table:ident, $table_name:expr, [ $(($field_name:ident, $field_type:ty)),+ ]) => (
 
-// pub trait ToOrmTable<T: OrmTable> {
-//     fn table() -> T {
-//         T::new()
-//     }
+        impl $table {
+            pub fn new() -> $table {
+                $table {
+                    table_name_: $table_name,
+                    table_alias_: None
+                }
+            }
 
-//     fn alias(alias: String) -> T {
-//         T::new_with_alias(alias)
-//     }
-// }
+            pub fn alias(alias: String) -> $table {
+                $table {
+                    table_name_: $table_name,
+                    table_alias_: Some(alias)
+                }
+            }
+
+            $(
+                pub fn $field_name(&self) -> NamedField<$field_type> {
+                    match &self.table_alias_ {
+                        &Some(ref alias) => NamedField::<$field_type>::new_qual(stringify!($field_name), alias.as_slice()),
+                        &None => NamedField::<$field_type>::new(stringify!($field_name))
+                    }
+                }
+            )+    
+        }
+
+        impl ToOrmTable<$table> for $model {
+            fn table() -> $table {
+                $table::new()
+            }
+
+            fn alias(alias: String) -> $table {
+                $table::alias(alias)
+            }
+        }
+        
+    )
+}
+
+pub trait ToOrmTable<T> {
+    fn table() -> T;
+    fn alias(alias: String) -> T;
+}
