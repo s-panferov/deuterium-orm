@@ -9,7 +9,6 @@ extern crate deuterium;
 
 use deuterium::*;
 
-use std::default::Default;
 use time::Timespec;
 
 deuterium_model! jedi {
@@ -31,5 +30,6 @@ impl Jedi {
 
 #[test]
 fn test() {
-    let table = JediTable::name();
+    let name = JediTable::name();
+    let jedi_a = JediTable::alias("a");
 }

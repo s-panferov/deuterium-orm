@@ -23,48 +23,11 @@ impl Generate<()> for ModelState {
 
         let ts_name = struct_name.name.as_str().to_string() + "Table".to_string();
         let ts_ident = cx.ident_of(ts_name.as_slice());
-
-
+        
         let model_struct_def = match &self.model.node {
             &ast::ItemStruct(ref model_struct_def, _) => model_struct_def.clone(),
             _ => fail!("Unexpected item")
         };
-
-        let table_name_field = Spanned {
-            node: ast::StructField_ {
-                kind: ast::NamedField(cx.ident_of("table_name_"), ast::Inherited),
-                id: ast::DUMMY_NODE_ID,
-                ty: quote_ty!(cx, String),
-                attrs: vec![]
-            },
-            span: sp
-        };      
-
-        let table_alias_field = Spanned {
-            node: ast::StructField_ {
-                kind: ast::NamedField(cx.ident_of("table_alias_"), ast::Inherited),
-                id: ast::DUMMY_NODE_ID,
-                ty: quote_ty!(cx, Option<String>),
-                attrs: vec![]
-            },
-            span: sp
-        };
-
-
-        let ts = P(ast::Item {
-            ident: ts_ident,
-            attrs: vec![],
-            id: ast::DUMMY_NODE_ID,
-            node: ast::ItemStruct(
-                P(ast::StructDef {
-                    fields: vec![table_name_field, table_alias_field],
-                    ctor_id: None
-                }),
-                ast_util::empty_generics(),
-            ),
-            vis: self.model.vis,
-            span: sp
-        });
 
         let mut ts_fields = vec![];
         for field in model_struct_def.fields.iter() {
@@ -84,9 +47,10 @@ impl Generate<()> for ModelState {
             ts_fields.push((field_name, field_ty));
         }
 
-        let ty_def_macro_body = format!("{}, {}, \"{}\".to_string(), {}",
+        let ty_def_macro_body = format!("{}, {}, {}, \"{}\", {}",
             struct_name.name.as_str(),
             ts_name,
+            ts_name + "Instance",
             name.name.as_str(),
             ts_fields.to_string()
         );
@@ -115,6 +79,6 @@ impl Generate<()> for ModelState {
             span: sp
         });
 
-        base::MacItems::new(vec![self.model, ts, impl_mac].into_iter())
+        base::MacItems::new(vec![self.model, impl_mac].into_iter())
     }
 }
