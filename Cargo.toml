@@ -1,5 +1,16 @@
 [package]
 
-name = "deuterium-orm"
+name = "deuterium_orm"
 version = "0.0.1"
 authors = ["Stanislav Panferov <fnight.m@gmail.com>"]
+
+[lib]
+name = "deuterium_orm"
+path = "src/lib.rs"
+plugin = true
+
+[dependencies.deuterium]
+git = "https://github.com/s-panferov/deuterium.git"
+
+[[test]]
+name = "tests"
