@@ -6,7 +6,8 @@ use syntax::codemap::Spanned;
 use syntax::ext::quote::rt::ExtParseUtils;
 
 use syntax::ext::build::AstBuilder;
-use model::{ModelState};
+
+use dt_plugin::model::{ModelState};
 
 pub trait Generate<Cfg> {
     fn generate<'a>(self, codemap::Span, &mut base::ExtCtxt, Cfg) -> Box<base::MacResult + 'a>;

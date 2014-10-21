@@ -2,7 +2,7 @@ use syntax::{ast, codemap};
 use syntax::ext::base;
 use syntax::parse::parser::Parser;
 
-use model::{ModelState};
+use dt_plugin::model::{ModelState};
 
 pub trait Parse<Cfg> {
     fn parse(&mut Parser, Cfg) -> Self;

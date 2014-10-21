@@ -2,8 +2,8 @@ use syntax::{ast, codemap, parse};
 use syntax::ptr::P;
 use syntax::ext::base;
 
-use parse::Parse;
-use generate::Generate;
+use dt_plugin::parse::Parse;
+use dt_plugin::generate::Generate;
 
 #[deriving(Clone)]
 pub struct ModelState {

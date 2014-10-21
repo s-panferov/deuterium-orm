@@ -11,7 +11,6 @@ extern crate deuterium;
 use deuterium::*;
 use deuterium_orm::*;
 use std::sync::Arc;
-use std::default::Default;
 
 use time::Timespec;
 
