@@ -4,10 +4,14 @@ name = "deuterium_orm"
 version = "0.0.1"
 authors = ["Stanislav Panferov <fnight.m@gmail.com>"]
 
+
 [lib]
 name = "deuterium_orm"
 path = "src/lib.rs"
-plugin = true
+
+[features]
+default = ["pg"]
+pg = ["postgres", "r2d2_postgres"]
 
 [dependencies.deuterium]
 git = "https://github.com/s-panferov/deuterium.git"
@@ -15,3 +19,15 @@ git = "https://github.com/s-panferov/deuterium.git"
 
 [[test]]
 name = "tests"
+
+[dependencies.postgres]
+optional = true
+git = "https://github.com/sfackler/rust-postgres.git"
+
+[dependencies.r2d2_postgres]
+optional = true
+git = "https://github.com/sfackler/r2d2-postgres.git"
+
+[dependencies.deuterium_plugin]
+#git = "git@github.com:s-panferov/deuterium-plugin.git"
+path = "../deuterium-plugin" 

@@ -3,14 +3,21 @@
 #![feature(macro_rules)]
 
 #[phase(plugin)]
-extern crate deuterium_orm;
+extern crate deuterium_plugin;
 extern crate deuterium_orm;
 extern crate time;
 extern crate deuterium;
 
+extern crate postgres;
+extern crate r2d2;
+extern crate r2d2_postgres;
+
 use deuterium::*;
 use deuterium_orm::*;
 use std::sync::Arc;
+
+use postgres::NoSsl;
+use r2d2_postgres::PostgresPoolManager;
 
 use time::Timespec;
 
@@ -38,8 +45,24 @@ impl JediTable {
     }
 }
 
+fn setup_pg() -> adapter::postgres::PostgresPool {
+    let manager = PostgresPoolManager::new("postgres://panferov@localhost/jedi", NoSsl);
+    let config = r2d2::Config {
+        pool_size: 5,
+        test_on_check_out: true,
+        ..std::default::Default::default()
+    };
+
+    let handler = r2d2::NoopErrorHandler;
+    r2d2::Pool::new(config, manager, handler).unwrap()
+}
+
 #[test]
 fn test() {
+
+    let pool = setup_pg();
+    pool.get().unwrap();
+
     let query = JediTable::ordered().where_(JediTable::name().is("Luke")).first();
     assert_sql!(query, "SELECT * FROM jedi WHERE name = 'Luke' ORDER BY created_at ASC LIMIT 1;")
 
