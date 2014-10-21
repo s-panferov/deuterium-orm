@@ -4,9 +4,7 @@ use syntax::parse::parser::Parser;
 
 use model::{ModelState};
 
-/// Trait that means something can be parsed with a configuration.
 pub trait Parse<Cfg> {
-    /// Parse Self from a Parser and a configuration object.
     fn parse(&mut Parser, Cfg) -> Self;
 }
 
@@ -15,9 +13,7 @@ impl<'a, 'b> Parse<(codemap::Span, &'a mut base::ExtCtxt<'b>, Option<ast::Ident>
              (_sp, _cx, name): (codemap::Span, &'a mut base::ExtCtxt, Option<ast::Ident>)) -> ModelState {
 
         let name = match name {
-            // Top-level describe block.
             Some(name) => name,
-            // Nested describe block.
             None => {
                 parser.fatal("Name of the table must be present in model block")
             }

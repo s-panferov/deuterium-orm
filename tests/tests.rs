@@ -41,8 +41,8 @@ impl JediTable {
 
 #[test]
 fn test() {
-    let query = JediTable::ordered().where_(JediTable::name().is("Luke"));
-    assert_sql!(query, "SELECT * FROM jedi WHERE name = 'Luke' ORDER BY created_at ASC;")
+    let query = JediTable::ordered().where_(JediTable::name().is("Luke")).first();
+    assert_sql!(query, "SELECT * FROM jedi WHERE name = 'Luke' ORDER BY created_at ASC LIMIT 1;")
 
     let jedi = create_model!(Jedi, name: "Luke Skywalker".to_string());
 }

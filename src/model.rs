@@ -11,11 +11,6 @@ pub struct ModelState {
     pub model: P<ast::Item>,
 }
 
-/// Defines the overarching `describe!` syntax extension.
-///
-/// All other macros in stainless are actually "fake" in the sense
-/// that they are detected and expanded inside of the implementation
-/// of `describe!`.
 pub fn model<'a>(cx: &'a mut base::ExtCtxt, sp: codemap::Span,
                 name: ast::Ident, tokens: Vec<ast::TokenTree>) -> Box<base::MacResult + 'a> {
     
