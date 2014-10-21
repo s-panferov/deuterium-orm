@@ -15,11 +15,11 @@ extern crate r2d2_postgres;
 use deuterium::*;
 use deuterium_orm::*;
 use std::sync::Arc;
+use time::Timespec;
 
 use postgres::NoSsl;
+use postgres::PostgresConnection;
 use r2d2_postgres::PostgresPoolManager;
-
-use time::Timespec;
 
 macro_rules! assert_sql(
     ($query:expr, $s:expr) => (
@@ -28,11 +28,10 @@ macro_rules! assert_sql(
 )
 
 deuterium_model! jedi {
-    #[allow(dead_code)]
     pub struct Jedi {
-        id: String,
+        id: i32,
         name: String,
-        force_level: u8,
+        force_level: i32,
         side: bool,
         created_at: Timespec,
         updated_at: Timespec
@@ -43,6 +42,24 @@ impl JediTable {
     pub fn ordered() -> SelectQuery<(), LimitMany> {
         JediTable::from().select_all().order_by(&JediTable::created_at())
     }
+}
+
+fn setup_tables(cn: &PostgresConnection) {
+   cn.batch_execute(r#"
+        DROP TABLE IF EXISTS jedi CASCADE;
+        CREATE TABLE jedi (
+            id          serial PRIMARY KEY,
+            name        varchar(40) NOT NULL,
+            force_level integer,
+            side        boolean,
+            created_at  timestamptz DEFAULT CURRENT_TIMESTAMP,
+            updated_at  timestamptz DEFAULT CURRENT_TIMESTAMP 
+        );
+
+        INSERT INTO jedi (name, force_level, side) VALUES
+            ('Luke Skywalker', 100, true),
+            ('Anakin Skywalker', 100, false);
+    "#).unwrap();
 }
 
 fn setup_pg() -> adapter::postgres::PostgresPool {
@@ -59,12 +76,21 @@ fn setup_pg() -> adapter::postgres::PostgresPool {
 
 #[test]
 fn test() {
-
     let pool = setup_pg();
-    pool.get().unwrap();
+    let cn = pool.get().unwrap();
 
-    let query = JediTable::ordered().where_(JediTable::name().is("Luke")).first();
-    assert_sql!(query, "SELECT * FROM jedi WHERE name = 'Luke' ORDER BY created_at ASC LIMIT 1;")
+    setup_tables(cn.deref());
 
-    let jedi = create_model!(Jedi, name: "Luke Skywalker".to_string());
+    let query = JediTable::ordered().where_(JediTable::name().is("Luke Skywalker")).first();
+
+    let prepared_query = cn.prepare(query.to_final_sql().as_slice());
+    let mut rows = prepared_query.as_ref().unwrap().query(&[]).unwrap();
+
+    for row in rows {
+        let jedi = Jedi::from_row(&query, &row);
+        println!("{}", jedi);
+    }
+
+    fail!("")
+    
 }
