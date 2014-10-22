@@ -38,9 +38,9 @@ deuterium_model! jedi {
     }
 }
 
-impl JediTable {
-    pub fn ordered() -> SelectQuery<(), LimitMany> {
-        JediTable::from().select_all().order_by(&JediTable::created_at())
+impl Jedi {
+    pub fn ordered() -> SelectQuery<(), LimitMany, Jedi> {
+        Jedi::from().select_all().order_by(&Jedi::created_at_f())
     }
 }
 
@@ -79,18 +79,8 @@ fn test() {
     let pool = setup_pg();
     let cn = pool.get().unwrap();
 
-    setup_tables(cn.deref());
+    setup_tables(&*cn);
 
-    let query = JediTable::ordered().where_(JediTable::name().is("Luke Skywalker")).first();
-
-    let prepared_query = cn.prepare(query.to_final_sql().as_slice());
-    let mut rows = prepared_query.as_ref().unwrap().query(&[]).unwrap();
-
-    for row in rows {
-        let jedi = Jedi::from_row(&query, &row);
-        println!("{}", jedi);
-    }
-
-    fail!("")
-    
+    Jedi::ordered().where_(Jedi::name_f().is("Luke Skywalker")).query_list(&*cn);
+    Jedi::ordered().where_(Jedi::name_f().is("Anakin Skywalker")).first().query(&*cn).unwrap();
 }

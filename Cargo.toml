@@ -14,8 +14,8 @@ default = ["pg"]
 pg = ["postgres", "r2d2_postgres"]
 
 [dependencies.deuterium]
-# git = "https://github.com/s-panferov/deuterium.git"
-path = "../deuterium"
+git = "https://github.com/s-panferov/deuterium.git"
+# path = "../deuterium"
 
 [[test]]
 name = "tests"
