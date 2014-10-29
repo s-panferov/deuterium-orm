@@ -32,7 +32,7 @@ deuterium_model! jedi {
         id: i32,
         name: String,
         force_level: i32,
-        side: bool,
+        light_side: bool,
         created_at: Timespec,
         updated_at: Timespec
     }
@@ -51,14 +51,20 @@ fn setup_tables(cn: &PostgresConnection) {
             id          serial PRIMARY KEY,
             name        varchar(40) NOT NULL,
             force_level integer,
-            side        boolean,
+            light_side  boolean,
             created_at  timestamptz DEFAULT CURRENT_TIMESTAMP,
             updated_at  timestamptz DEFAULT CURRENT_TIMESTAMP 
         );
 
-        INSERT INTO jedi (name, force_level, side) VALUES
+        INSERT INTO jedi (name, force_level, light_side) VALUES
             ('Luke Skywalker', 100, true),
+            ('Mace Windu', 90, true),
+            ('Obi-Wan Kenoby', 99, true),
+            ('Kit Fisto', 70, true),
+            ('Count Dooku', 99, false),
+            ('Darth Maul', 70, false),
             ('Anakin Skywalker', 100, false);
+
     "#).unwrap();
 }
 
@@ -81,6 +87,6 @@ fn test() {
 
     setup_tables(&*cn);
 
-    Jedi::ordered().where_(Jedi::name_f().is("Luke Skywalker")).query_list(&*cn);
-    Jedi::ordered().where_(Jedi::name_f().is("Anakin Skywalker")).first().query(&*cn).unwrap();
+    Jedi::ordered().where_(Jedi::name_f().is("Luke Skywalker".to_string())).query_list(&*cn);
+    Jedi::ordered().where_(Jedi::name_f().is("Anakin Skywalker".to_string())).first().query(&*cn).unwrap();
 }

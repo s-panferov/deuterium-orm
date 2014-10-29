@@ -1,0 +1,10 @@
+[package]
+
+name = "deuterium_plugin"
+version = "0.0.1"
+authors = ["Stanislav Panferov <fnight.m@gmail.com>"]
+
+[lib]
+name = "deuterium_plugin"
+path = "src/lib.rs"
+plugin = true
