@@ -1,6 +1,19 @@
 #[macro_export]
 macro_rules! define_model {
-    ($model:ident, $table:ident, $many_query:ident, $one_query:ident, $table_name:expr, [ $(($field_name:ident, $field_type:ty, $field_name_f:ident)),+ ]) => (
+    (
+        // Name of model, e.g. `Jedi`
+        $model:ident,
+        // Name of table-helper, e.g. `JediTable`
+        $table:ident, 
+        // Name of table-helper `ManySelectQueryExt` trait e.g. `JediTableManySelectQueryExt`
+        $many_select_query_ext:ident,
+        // Name of table-helper `OneSelectQueryExt` trait e.g. `JediTableOneSelectQueryExt` 
+        $one_select_query_ext:ident, 
+        // Table name in database
+        $table_name:expr, 
+        // Collection of fields
+        [ $(($field_name:ident, $field_type:ty, $field_name_f:ident)),+ ]
+    ) => (
 
         #[deriving(Default, Show, Clone)]
         #[allow(dead_code)]
@@ -69,6 +82,10 @@ macro_rules! define_model {
         }
 
         impl deuterium::Table for $table {
+            fn upcast_table(&self) -> RcTable {
+                Arc::new(box self.clone() as BoxedTable)
+            }
+
             fn get_table_name(&self) -> &String {
                 self.0.get_table_name()
             }
@@ -97,10 +114,13 @@ macro_rules! define_model {
             }
         }
 
-        // For select_* methods with proper type
         impl deuterium::Selectable<$model> for $table { }
+        impl deuterium::Updatable<$model> for $table { }
+        impl deuterium::Deletable<$model> for $table { }
+        impl deuterium::Insertable<$model> for $table { }
 
-        trait $many_query<T> {
+        // SelectQuery extension
+        trait $many_select_query_ext<T> {
             fn as_query(&self) -> &SelectQuery<T, LimitMany, $model>;
 
             fn query_list(&self, cn: &PostgresConnection) -> Vec<$model> {
@@ -113,7 +133,8 @@ macro_rules! define_model {
             }
         }
 
-        trait $one_query<T> {
+        // SelectQuery extension
+        trait $one_select_query_ext<T> {
             fn as_query(&self) -> &SelectQuery<T, LimitOne, $model>;
 
             fn query_list(&self, cn: &PostgresConnection) -> Vec<$model> {
@@ -133,13 +154,13 @@ macro_rules! define_model {
             }
         }
 
-        impl<T> $many_query<T> for  SelectQuery<T, LimitMany, $model> {
+        impl<T> $many_select_query_ext<T> for SelectQuery<T, LimitMany, $model> {
             fn as_query(&self) -> &SelectQuery<T, LimitMany, $model> {
                 self
             }
         }
 
-        impl<T> $one_query<T> for  SelectQuery<T, LimitOne, $model> {
+        impl<T> $one_select_query_ext<T> for SelectQuery<T, LimitOne, $model> {
             fn as_query(&self) -> &SelectQuery<T, LimitOne, $model> {
                 self
             }

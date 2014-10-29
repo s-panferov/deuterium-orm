@@ -29,4 +29,4 @@ optional = true
 git = "https://github.com/sfackler/r2d2-postgres.git"
 
 [dependencies.deuterium_plugin]
-path = "./deuterium-plugin" 
+path = "./plugin" 

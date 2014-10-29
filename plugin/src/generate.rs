@@ -46,8 +46,8 @@ impl Generate<()> for ModelState {
         let ty_def_macro_body = format!("{}, {}, {}, {}, \"{}\", {}",
             struct_name.name.as_str(),
             ts_name,
-            ts_name + "ManyQuery",
-            ts_name + "OneQuery",
+            ts_name + "ManySelectQueryExt",
+            ts_name + "OneSelectQueryExt",
             name.name.as_str(),
             ts_fields.to_string()
         );
