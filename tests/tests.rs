@@ -105,7 +105,7 @@ fn bench_list_query(b: &mut Bencher) {
     setup_tables(&*cn);
 
     b.iter(|| {
-        for i in range(0, BENCH_SIZE) {
+        for _ in range(0, BENCH_SIZE) {
             Jedi::ordered().where_(Jedi::name_f().is("Luke Skywalker".to_string())).query_list(&*cn, &[]);
         }
     })
