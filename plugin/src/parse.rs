@@ -1,6 +1,7 @@
 use syntax::{ast, codemap};
 use syntax::ext::base;
 use syntax::parse::parser::Parser;
+use syntax::attr::first_attr_value_str_by_name;
 
 use model::{ModelState};
 
@@ -37,9 +38,12 @@ impl<'a, 'b> Parse<(codemap::Span, &'a mut base::ExtCtxt<'b>, Option<ast::Ident>
             }
         };
 
+        let primary_key = first_attr_value_str_by_name(model_struct.attrs.as_slice(), "pk").map(|s| s.get().to_string());
+
         ModelState {
             mod_name: name,
-            model: model_struct
+            model: model_struct,
+            primary_key: primary_key
         }
     }
 }

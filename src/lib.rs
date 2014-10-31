@@ -14,3 +14,4 @@ extern crate r2d2_postgres;
 extern crate deuterium;
 
 pub mod adapter;
+

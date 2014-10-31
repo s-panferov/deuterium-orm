@@ -11,6 +11,9 @@ extern crate deuterium;
 extern crate postgres;
 extern crate r2d2;
 extern crate r2d2_postgres;
+extern crate test;
+
+use test::Bencher;
 
 use deuterium::*;
 use deuterium_orm::*;
@@ -28,6 +31,7 @@ macro_rules! assert_sql(
 )
 
 deuterium_model! jedi {
+    #[primary_key="id"]
     pub struct Jedi {
         id: i32,
         name: String,
@@ -40,7 +44,7 @@ deuterium_model! jedi {
 
 impl Jedi {
     pub fn ordered() -> SelectQuery<(), LimitMany, Jedi> {
-        Jedi::from().select_all().order_by(&Jedi::created_at_f())
+        Jedi::table().select_all().order_by(&Jedi::created_at_f())
     }
 }
 
@@ -81,12 +85,28 @@ fn setup_pg() -> adapter::postgres::PostgresPool {
 }
 
 #[test]
-fn test() {
+fn test_it() {
     let pool = setup_pg();
     let cn = pool.get().unwrap();
 
     setup_tables(&*cn);
 
-    Jedi::ordered().where_(Jedi::name_f().is("Luke Skywalker".to_string())).query_list(&*cn);
-    Jedi::ordered().where_(Jedi::name_f().is("Anakin Skywalker".to_string())).first().query(&*cn).unwrap();
+    Jedi::ordered().where_(Jedi::name_f().is("Luke Skywalker".to_string())).query_list(&*cn, &[]);
+    Jedi::ordered().where_(Jedi::name_f().is("Anakin Skywalker".to_string())).first().query(&*cn, &[]).unwrap();
+}
+
+const BENCH_SIZE: uint = 1000;
+
+#[bench]
+fn bench_list_query(b: &mut Bencher) {
+    let pool = setup_pg();
+    let cn = pool.get().unwrap();
+
+    setup_tables(&*cn);
+
+    b.iter(|| {
+        for i in range(0, BENCH_SIZE) {
+            Jedi::ordered().where_(Jedi::name_f().is("Luke Skywalker".to_string())).query_list(&*cn, &[]);
+        }
+    })
 }

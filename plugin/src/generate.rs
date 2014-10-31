@@ -22,7 +22,7 @@ impl Generate<()> for ModelState {
         
         let model_struct_def = match &self.model.node {
             &ast::ItemStruct(ref model_struct_def, _) => model_struct_def.clone(),
-            _ => fail!("Unexpected item")
+            _ => panic!("Unexpected item")
         };
 
         let mut ts_fields = vec![];
@@ -32,12 +32,12 @@ impl Generate<()> for ModelState {
                     let path_idents: Vec<ast::Ident> = path.segments.iter().map(|s| s.identifier).collect();
                     ast_util::path_name_i(path_idents.as_slice())
                 },
-                _ => fail!("??")
+                _ => panic!("??")
             };
             // Name table field as model field
             let field_name = match field.node.kind {
                 ast::NamedField(field_ident, _) => field_ident.name.as_str().to_string(),
-                _ => fail!("Can't use unnamed fields in models")
+                _ => panic!("Can't use unnamed fields in models")
             };
 
             ts_fields.push((field_name.to_string(), field_ty, format!("{}_f", field_name)));

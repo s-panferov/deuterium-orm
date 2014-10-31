@@ -14,7 +14,6 @@ macro_rules! define_model {
         // Collection of fields
         [ $(($field_name:ident, $field_type:ty, $field_name_f:ident)),+ ]
     ) => (
-
         #[deriving(Default, Show, Clone)]
         #[allow(dead_code)]
         struct $model {
@@ -66,7 +65,7 @@ macro_rules! define_model {
                 $table_name
             }
 
-            pub fn from() -> $table {
+            pub fn table() -> $table {
                 $table(deuterium::TableDef::new($model::table_name()))
             }
 
@@ -120,48 +119,54 @@ macro_rules! define_model {
         impl deuterium::Insertable<$model> for $table { }
 
         // SelectQuery extension
-        trait $many_select_query_ext<T> {
-            fn as_query(&self) -> &SelectQuery<T, LimitMany, $model>;
+        trait $many_select_query_ext<T>: QueryToSql {
+            fn as_model_select_query(&self) -> &SelectQuery<T, LimitMany, $model>;
 
-            fn query_list(&self, cn: &PostgresConnection) -> Vec<$model> {
-                let prepared_query = cn.prepare(self.as_query().to_final_sql().as_slice());
-                let rows = prepared_query.as_ref().unwrap().query(&[]).unwrap();
+            fn query_list(&self, cn: &PostgresConnection, params: &[&postgres::types::ToSql]) -> Vec<$model> {
+                let (ctx, maybe_stm) = deuterium_orm::adapter::postgres::PostgresAdapter::prepare_query(self, cn);
+                let stm = maybe_stm.unwrap();
+                let prepared_params = deuterium_orm::adapter::postgres::PostgresAdapter::prepare_params(params, ctx.data());
+                let rows = stm.query(prepared_params.as_slice()).unwrap();
 
                 rows.map(|row| {
-                    Jedi::from_row(self.as_query(), &row)
+                    $model::from_row(self.as_model_select_query(), &row)
                 }).collect()
             }
         }
 
         // SelectQuery extension
-        trait $one_select_query_ext<T> {
-            fn as_query(&self) -> &SelectQuery<T, LimitOne, $model>;
+        trait $one_select_query_ext<T>: QueryToSql {
+            fn as_model_select_query(&self) -> &SelectQuery<T, LimitOne, $model>;
 
-            fn query_list(&self, cn: &PostgresConnection) -> Vec<$model> {
-                let prepared_query = cn.prepare(self.as_query().to_final_sql().as_slice());
-                let rows = prepared_query.as_ref().unwrap().query(&[]).unwrap();
+            fn query_list(&self, cn: &PostgresConnection, params: &[&postgres::types::ToSql]) -> Vec<$model> {
+                let (ctx, maybe_stm) = deuterium_orm::adapter::postgres::PostgresAdapter::prepare_query(self, cn);
+                let stm = maybe_stm.unwrap();
+                let prepared_params = deuterium_orm::adapter::postgres::PostgresAdapter::prepare_params(params, ctx.data());
+                let rows = stm.query(prepared_params.as_slice()).unwrap();
 
                 rows.map(|row| {
-                    Jedi::from_row(self.as_query(), &row)
+                    $model::from_row(self.as_model_select_query(), &row)
                 }).collect()
             }
 
-            fn query(&self, cn: &PostgresConnection) -> Option<$model> {
-                let prepared_query = cn.prepare(self.as_query().to_final_sql().as_slice());
-                let mut rows = prepared_query.as_ref().unwrap().query(&[]).unwrap();
+            fn query(&self, cn: &PostgresConnection, params: &[&postgres::types::ToSql]) -> Option<$model> {
+                let (ctx, maybe_stm) = deuterium_orm::adapter::postgres::PostgresAdapter::prepare_query(self, cn);
+                let stm = maybe_stm.unwrap();
+                let prepared_params = deuterium_orm::adapter::postgres::PostgresAdapter::prepare_params(params, ctx.data());
+                let mut rows = stm.query(prepared_params.as_slice()).unwrap();
 
-                rows.next().map(|row| Jedi::from_row(self.as_query(), &row))
+                rows.next().map(|row| $model::from_row(self.as_model_select_query(), &row))
             }
         }
 
         impl<T> $many_select_query_ext<T> for SelectQuery<T, LimitMany, $model> {
-            fn as_query(&self) -> &SelectQuery<T, LimitMany, $model> {
+            fn as_model_select_query(&self) -> &SelectQuery<T, LimitMany, $model> {
                 self
             }
         }
 
         impl<T> $one_select_query_ext<T> for SelectQuery<T, LimitOne, $model> {
-            fn as_query(&self) -> &SelectQuery<T, LimitOne, $model> {
+            fn as_model_select_query(&self) -> &SelectQuery<T, LimitOne, $model> {
                 self
             }
         }
