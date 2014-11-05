@@ -31,7 +31,7 @@ macro_rules! define_model {
                 }
             }
 
-            fn from_row<T, L>(query: &deuterium::SelectQuery<T, L, $model>, row: &postgres::PostgresRow) -> $model {
+            fn from_row<T, L>(query: &deuterium::SelectQuery<T, L, $model>, row: &postgres::Row) -> $model {
                 match &query.select {
                     &SelectAll => {
                         $model {
@@ -122,11 +122,10 @@ macro_rules! define_model {
         trait $many_select_query_ext<T>: QueryToSql {
             fn as_model_select_query(&self) -> &SelectQuery<T, LimitMany, $model>;
 
-            fn query_list(&self, cn: &PostgresConnection, params: &[&postgres::types::ToSql]) -> Vec<$model> {
+            fn query_list(&self, cn: &Connection, params: &[&postgres::types::ToSql]) -> Vec<$model> {
                 let (ctx, maybe_stm) = deuterium_orm::adapter::postgres::PostgresAdapter::prepare_query(self, cn);
                 let stm = maybe_stm.unwrap();
-                let prepared_params = deuterium_orm::adapter::postgres::PostgresAdapter::prepare_params(params, ctx.data());
-                let rows = stm.query(prepared_params.as_slice()).unwrap();
+                let rows = deuterium_orm::adapter::postgres::PostgresAdapter::exec(&stm, params, ctx.data()).unwrap();
 
                 rows.map(|row| {
                     $model::from_row(self.as_model_select_query(), &row)
@@ -138,22 +137,20 @@ macro_rules! define_model {
         trait $one_select_query_ext<T>: QueryToSql {
             fn as_model_select_query(&self) -> &SelectQuery<T, LimitOne, $model>;
 
-            fn query_list(&self, cn: &PostgresConnection, params: &[&postgres::types::ToSql]) -> Vec<$model> {
+            fn query_list(&self, cn: &Connection, params: &[&postgres::types::ToSql]) -> Vec<$model> {
                 let (ctx, maybe_stm) = deuterium_orm::adapter::postgres::PostgresAdapter::prepare_query(self, cn);
                 let stm = maybe_stm.unwrap();
-                let prepared_params = deuterium_orm::adapter::postgres::PostgresAdapter::prepare_params(params, ctx.data());
-                let rows = stm.query(prepared_params.as_slice()).unwrap();
-
+                let rows = deuterium_orm::adapter::postgres::PostgresAdapter::exec(&stm, params, ctx.data()).unwrap();
+                
                 rows.map(|row| {
                     $model::from_row(self.as_model_select_query(), &row)
                 }).collect()
             }
 
-            fn query(&self, cn: &PostgresConnection, params: &[&postgres::types::ToSql]) -> Option<$model> {
+            fn query(&self, cn: &Connection, params: &[&postgres::types::ToSql]) -> Option<$model> {
                 let (ctx, maybe_stm) = deuterium_orm::adapter::postgres::PostgresAdapter::prepare_query(self, cn);
                 let stm = maybe_stm.unwrap();
-                let prepared_params = deuterium_orm::adapter::postgres::PostgresAdapter::prepare_params(params, ctx.data());
-                let mut rows = stm.query(prepared_params.as_slice()).unwrap();
+                let mut rows = deuterium_orm::adapter::postgres::PostgresAdapter::exec(&stm, params, ctx.data()).unwrap();
 
                 rows.next().map(|row| $model::from_row(self.as_model_select_query(), &row))
             }

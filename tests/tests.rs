@@ -21,7 +21,7 @@ use std::sync::Arc;
 use time::Timespec;
 
 use postgres::NoSsl;
-use postgres::PostgresConnection;
+use postgres::Connection;
 use r2d2_postgres::PostgresPoolManager;
 
 macro_rules! assert_sql(
@@ -48,7 +48,7 @@ impl Jedi {
     }
 }
 
-fn setup_tables(cn: &PostgresConnection) {
+fn setup_tables(cn: &Connection) {
    cn.batch_execute(r#"
         DROP TABLE IF EXISTS jedi CASCADE;
         CREATE TABLE jedi (
