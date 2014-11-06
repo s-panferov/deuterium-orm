@@ -10,8 +10,10 @@ extern crate postgres;
 extern crate r2d2;
 #[cfg(feature = "postgres")]
 extern crate r2d2_postgres;
+extern crate time;
 
 extern crate deuterium;
 
 pub mod adapter;
+pub mod migration;
 
