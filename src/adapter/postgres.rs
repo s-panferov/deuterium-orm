@@ -15,6 +15,26 @@ pub type PostgresPool = ::r2d2::Pool<
     ::r2d2_postgres::PostgresPoolManager,
     ::r2d2::NoopErrorHandler>;
 
+pub type PostgresPooledConnection<'a> = ::r2d2::PooledConnection<
+    'a, 
+    ::postgres::Connection, 
+    ::r2d2_postgres::Error, 
+    ::r2d2_postgres::PostgresPoolManager, 
+    ::r2d2::NoopErrorHandler
+>;
+
+pub fn setup(cn_str: &str, pool_size: uint) -> PostgresPool {
+    let manager = ::r2d2_postgres::PostgresPoolManager::new(cn_str, ::postgres::NoSsl);
+    let config = ::r2d2::Config {
+        pool_size: pool_size,
+        test_on_check_out: true,
+        ..::std::default::Default::default()
+    };
+
+    let handler = ::r2d2::NoopErrorHandler;
+    ::r2d2::Pool::new(config, manager, handler).unwrap()
+}
+
 pub struct PostgresAdapter;
 
 impl PostgresAdapter {
