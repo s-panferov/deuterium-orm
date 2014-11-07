@@ -12,13 +12,13 @@ macro_rules! define_model {
         // Table name in database
         $table_name:expr, 
         // Collection of fields
-        [ $(($field_name:ident, $field_type:ty, $field_name_f:ident)),+ ]
+        [ $(($field_name:ident, $field_type:ty, $field_name_f:ident, $($vis:tt)*)),+ ]
     ) => (
         #[deriving(Default, Show, Clone)]
         #[allow(dead_code)]
-        struct $model {
+        pub struct $model {
             $(
-                $field_name: Option<$field_type>,
+                pub $field_name: Option<$field_type>,
             )+  
         }
 
@@ -31,16 +31,16 @@ macro_rules! define_model {
                 }
             }
 
-            fn from_row<T, L>(query: &deuterium::SelectQuery<T, L, $model>, row: &postgres::Row) -> $model {
+            fn from_row<T, L>(query: &::deuterium::SelectQuery<T, L, $model>, row: &::postgres::Row) -> $model {
                 match &query.select {
-                    &SelectAll => {
+                    &::deuterium::SelectAll => {
                         $model {
                            $(
                                 $field_name: Some(row.get(stringify!($field_name))),
                             )+
                         }
                     },
-                    &SelectOnly(_) => {
+                    &::deuterium::SelectOnly(_) => {
                         let mut model = $model::empty();
                         $(
                             model.$field_name = match row.get_opt(stringify!($field_name)) {
@@ -56,7 +56,7 @@ macro_rules! define_model {
         }
 
         #[deriving(Clone)]
-        struct $table(deuterium::TableDef);
+        struct $table(::deuterium::TableDef);
 
         #[allow(dead_code)]
         impl $model {
@@ -66,23 +66,23 @@ macro_rules! define_model {
             }
 
             pub fn table() -> $table {
-                $table(deuterium::TableDef::new($model::table_name()))
+                $table(::deuterium::TableDef::new($model::table_name()))
             }
 
             pub fn alias(alias: &str) -> $table {
-                $table(deuterium::TableDef::new_with_alias($model::table_name(), alias))
+                $table(::deuterium::TableDef::new_with_alias($model::table_name(), alias))
             }
 
             $(
-                pub fn $field_name_f() -> NamedField<$field_type> {
-                    NamedField::<$field_type>::new(stringify!($field_name), $model::table_name())
+                pub fn $field_name_f() -> ::deuterium::NamedField<$field_type> {
+                    ::deuterium::NamedField::<$field_type>::new(stringify!($field_name), $model::table_name())
                 }
             )+   
         }
 
-        impl deuterium::Table for $table {
-            fn upcast_table(&self) -> RcTable {
-                Arc::new(box self.clone() as BoxedTable)
+        impl ::deuterium::Table for $table {
+            fn upcast_table(&self) -> ::deuterium::RcTable {
+                ::std::sync::Arc::new(box self.clone() as ::deuterium::BoxedTable)
             }
 
             fn get_table_name(&self) -> &String {
@@ -97,35 +97,35 @@ macro_rules! define_model {
         #[allow(dead_code)]
         impl $table {
             $(
-                pub fn $field_name_f(&self) -> NamedField<$field_type> {
-                    NamedField::<$field_type>::field_of(stringify!($field_name), self)
+                pub fn $field_name_f(&self) -> ::deuterium::NamedField<$field_type> {
+                    ::deuterium::NamedField::<$field_type>::field_of(stringify!($field_name), self)
                 }
             )+  
         }
 
-        impl deuterium::From for $table {
-            fn as_sql(&self) -> &deuterium::FromToSql {
+        impl ::deuterium::From for $table {
+            fn as_sql(&self) -> &::deuterium::FromToSql {
                 &self.0
             }
 
-            fn upcast_from(&self) -> RcFrom {
-                Arc::new(box self.clone() as BoxedFrom)
+            fn upcast_from(&self) -> ::deuterium::RcFrom {
+                ::std::sync::Arc::new(box self.clone() as ::deuterium::BoxedFrom)
             }
         }
 
-        impl deuterium::Selectable<$model> for $table { }
-        impl deuterium::Updatable<$model> for $table { }
-        impl deuterium::Deletable<$model> for $table { }
-        impl deuterium::Insertable<$model> for $table { }
+        impl ::deuterium::Selectable<$model> for $table { }
+        impl ::deuterium::Updatable<$model> for $table { }
+        impl ::deuterium::Deletable<$model> for $table { }
+        impl ::deuterium::Insertable<$model> for $table { }
 
         // SelectQuery extension
-        trait $many_select_query_ext<T>: QueryToSql {
-            fn as_model_select_query(&self) -> &SelectQuery<T, LimitMany, $model>;
+        trait $many_select_query_ext<T>: ::deuterium::QueryToSql {
+            fn as_model_select_query(&self) -> &::deuterium::SelectQuery<T, ::deuterium::LimitMany, $model>;
 
-            fn query_list(&self, cn: &Connection, params: &[&postgres::types::ToSql]) -> Vec<$model> {
-                let (ctx, maybe_stm) = deuterium_orm::adapter::postgres::PostgresAdapter::prepare_query(self, cn);
+            fn query_list(&self, cn: &::postgres::Connection, params: &[&::postgres::types::ToSql]) -> Vec<$model> {
+                let (ctx, maybe_stm) = ::deuterium_orm::adapter::postgres::PostgresAdapter::prepare_query(self, cn);
                 let stm = maybe_stm.unwrap();
-                let rows = deuterium_orm::adapter::postgres::PostgresAdapter::exec(&stm, params, ctx.data()).unwrap();
+                let rows = ::deuterium_orm::adapter::postgres::PostgresAdapter::exec(&stm, params, ctx.data()).unwrap();
 
                 rows.map(|row| {
                     $model::from_row(self.as_model_select_query(), &row)
@@ -134,36 +134,36 @@ macro_rules! define_model {
         }
 
         // SelectQuery extension
-        trait $one_select_query_ext<T>: QueryToSql {
-            fn as_model_select_query(&self) -> &SelectQuery<T, LimitOne, $model>;
+        trait $one_select_query_ext<T>: ::deuterium::QueryToSql {
+            fn as_model_select_query(&self) -> &::deuterium::SelectQuery<T, ::deuterium::LimitOne, $model>;
 
-            fn query_list(&self, cn: &Connection, params: &[&postgres::types::ToSql]) -> Vec<$model> {
-                let (ctx, maybe_stm) = deuterium_orm::adapter::postgres::PostgresAdapter::prepare_query(self, cn);
+            fn query_list(&self, cn: &::postgres::Connection, params: &[&::postgres::types::ToSql]) -> Vec<$model> {
+                let (ctx, maybe_stm) = ::deuterium_orm::adapter::postgres::PostgresAdapter::prepare_query(self, cn);
                 let stm = maybe_stm.unwrap();
-                let rows = deuterium_orm::adapter::postgres::PostgresAdapter::exec(&stm, params, ctx.data()).unwrap();
+                let rows = ::deuterium_orm::adapter::postgres::PostgresAdapter::exec(&stm, params, ctx.data()).unwrap();
                 
                 rows.map(|row| {
                     $model::from_row(self.as_model_select_query(), &row)
                 }).collect()
             }
 
-            fn query(&self, cn: &Connection, params: &[&postgres::types::ToSql]) -> Option<$model> {
-                let (ctx, maybe_stm) = deuterium_orm::adapter::postgres::PostgresAdapter::prepare_query(self, cn);
+            fn query(&self, cn: &::postgres::Connection, params: &[&::postgres::types::ToSql]) -> Option<$model> {
+                let (ctx, maybe_stm) = ::deuterium_orm::adapter::postgres::PostgresAdapter::prepare_query(self, cn);
                 let stm = maybe_stm.unwrap();
-                let mut rows = deuterium_orm::adapter::postgres::PostgresAdapter::exec(&stm, params, ctx.data()).unwrap();
+                let mut rows = ::deuterium_orm::adapter::postgres::PostgresAdapter::exec(&stm, params, ctx.data()).unwrap();
 
                 rows.next().map(|row| $model::from_row(self.as_model_select_query(), &row))
             }
         }
 
-        impl<T> $many_select_query_ext<T> for SelectQuery<T, LimitMany, $model> {
-            fn as_model_select_query(&self) -> &SelectQuery<T, LimitMany, $model> {
+        impl<T> $many_select_query_ext<T> for ::deuterium::SelectQuery<T, ::deuterium::LimitMany, $model> {
+            fn as_model_select_query(&self) -> &::deuterium::SelectQuery<T, ::deuterium::LimitMany, $model> {
                 self
             }
         }
 
-        impl<T> $one_select_query_ext<T> for SelectQuery<T, LimitOne, $model> {
-            fn as_model_select_query(&self) -> &SelectQuery<T, LimitOne, $model> {
+        impl<T> $one_select_query_ext<T> for ::deuterium::SelectQuery<T, ::deuterium::LimitOne, $model> {
+            fn as_model_select_query(&self) -> &::deuterium::SelectQuery<T, ::deuterium::LimitOne, $model> {
                 self
             }
         }

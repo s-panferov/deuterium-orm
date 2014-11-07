@@ -17,7 +17,6 @@ use test::Bencher;
 
 use deuterium::*;
 use deuterium_orm::*;
-use std::sync::Arc;
 use time::Timespec;
 
 use postgres::NoSsl;
@@ -33,10 +32,10 @@ macro_rules! assert_sql(
 deuterium_model! jedi {
     #[primary_key="id"]
     pub struct Jedi {
-        id: i32,
-        name: String,
+        pub id: i32,
+        pub name: String,
         force_level: i32,
-        light_side: bool,
+        light_side: Option<bool>,
         created_at: Timespec,
         updated_at: Timespec
     }

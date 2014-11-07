@@ -1,9 +1,10 @@
-use syntax::{ast, ast_util, codemap};
+use syntax::{ast, codemap};
 use syntax::ptr::P;
 use syntax::ext::base;
 use syntax::owned_slice::OwnedSlice;
 use syntax::codemap::Spanned;
 use syntax::ext::quote::rt::ExtParseUtils;
+use syntax::ext::quote::rt::ToSource;
 
 use syntax::ext::build::AstBuilder;
 
@@ -27,20 +28,22 @@ impl Generate<()> for ModelState {
 
         let mut ts_fields = vec![];
         for field in model_struct_def.fields.iter() {
-            let field_ty = match &field.node.ty.node {
-                &ast::TyPath(ref path, _, _) => {
-                    let path_idents: Vec<ast::Ident> = path.segments.iter().map(|s| s.identifier).collect();
-                    ast_util::path_name_i(path_idents.as_slice())
-                },
-                _ => panic!("??")
-            };
+            let field_ty = field.node.ty.to_source();
+
             // Name table field as model field
-            let field_name = match field.node.kind {
-                ast::NamedField(field_ident, _) => field_ident.name.as_str().to_string(),
+            let (field_name, visibility) = match field.node.kind {
+                ast::NamedField(field_ident, visibility) => {
+                    let name = field_ident.name.as_str().to_string();
+                    let visibility = match visibility {
+                        ast::Public => "pub",
+                        ast::Inherited => ""
+                    };
+                    (name, visibility)
+                },
                 _ => panic!("Can't use unnamed fields in models")
             };
 
-            ts_fields.push((field_name.to_string(), field_ty, format!("{}_f", field_name)));
+            ts_fields.push((field_name.to_string(), field_ty, format!("{}_f", field_name), visibility));
         }
 
         let ty_def_macro_body = format!("{}, {}, {}, {}, \"{}\", {}",
