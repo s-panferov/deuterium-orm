@@ -56,7 +56,7 @@ macro_rules! define_model {
         }
 
         #[deriving(Clone)]
-        struct $table(::deuterium::TableDef);
+        pub struct $table(::deuterium::TableDef);
 
         #[allow(dead_code)]
         impl $model {
@@ -119,7 +119,7 @@ macro_rules! define_model {
         impl ::deuterium::Insertable<$model> for $table { }
 
         // SelectQuery extension
-        trait $many_select_query_ext<T>: ::deuterium::QueryToSql {
+        pub trait $many_select_query_ext<T>: ::deuterium::QueryToSql {
             fn as_model_select_query(&self) -> &::deuterium::SelectQuery<T, ::deuterium::LimitMany, $model>;
 
             fn query_list(&self, cn: &::postgres::Connection, params: &[&::postgres::types::ToSql]) -> Vec<$model> {
@@ -134,7 +134,7 @@ macro_rules! define_model {
         }
 
         // SelectQuery extension
-        trait $one_select_query_ext<T>: ::deuterium::QueryToSql {
+        pub trait $one_select_query_ext<T>: ::deuterium::QueryToSql {
             fn as_model_select_query(&self) -> &::deuterium::SelectQuery<T, ::deuterium::LimitOne, $model>;
 
             fn query_list(&self, cn: &::postgres::Connection, params: &[&::postgres::types::ToSql]) -> Vec<$model> {

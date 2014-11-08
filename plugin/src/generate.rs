@@ -66,8 +66,12 @@ impl Generate<()> for ModelState {
                         global: false,
                         segments: vec![ast::PathSegment{
                             identifier: cx.ident_of("define_model"),
-                            lifetimes: vec![],
-                            types: OwnedSlice::empty()
+                            parameters: ast::AngleBracketedParameters(
+                                ast::AngleBracketedParameterData {
+                                   lifetimes: vec![],
+                                    types: OwnedSlice::empty()  
+                                }
+                            )
                         }]
                     },
                     cx.parse_tts(ty_def_macro_body),
