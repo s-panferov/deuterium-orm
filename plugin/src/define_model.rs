@@ -3,6 +3,7 @@ macro_rules! define_model {
     (
         // Name of model, e.g. `Jedi`
         $model:ident,
+        $model_meta:ident,
         // Name of table-helper, e.g. `JediTable`
         $table:ident, 
         // Name of table-helper `ManySelectQueryExt` trait e.g. `JediTableManySelectQueryExt`
@@ -12,22 +13,77 @@ macro_rules! define_model {
         // Table name in database
         $table_name:expr, 
         // Collection of fields
-        [ $(($field_name:ident, $field_type:ty, $field_name_f:ident, $($vis:tt)*)),+ ]
+        [ $((
+            $field_name:ident, 
+            $field_type:ty, 
+            $field_name_f:ident, 
+            $field_get:ident, 
+            $field_set:ident, 
+            $field_changed_flag:ident, // the name of internal flag field
+            $field_changed_accessor:ident, // accessor name
+            $($vis:tt)*)),+ ]
     ) => (
         #[deriving(Default, Show, Clone)]
         #[allow(dead_code)]
         pub struct $model {
             $(
-                pub $field_name: Option<$field_type>,
+                $field_name: Option<$field_type>,
             )+  
+            __meta: $model_meta
+        }
+
+        #[deriving(Default, Show, Clone)]
+        #[allow(dead_code)]
+        pub struct $model_meta {
+            $(
+                $field_changed_flag: bool,
+            )+  
+            changed: bool,
+        }
+
+        impl $model_meta {
+            pub fn new() -> $model_meta {
+                $model_meta {
+                    $(
+                        // FIXME a macros issue don't allows to use `false` here
+                        $field_changed_flag: !true,
+                    )+  
+                    changed: false,
+                }
+            }
         }
 
         impl $model {
+
+            $(
+                #[allow(dead_code)]
+                pub fn $field_get(&self) -> &$field_type {
+                    return self.$field_name.as_ref().unwrap();
+                }
+
+                #[allow(dead_code)]
+                pub fn $field_set(&mut self, value: $field_type) {
+                    self.$field_name = Some(value);
+                    self.__meta.changed = true;
+                    self.__meta.$field_changed_flag = true;
+                }
+
+                #[allow(dead_code)]
+                pub fn $field_changed_accessor(&self) -> bool {
+                    self.__meta.$field_changed_flag
+                }
+            )+  
+
+            pub fn get_primary(&self) -> &Uuid {
+                self.get_id()
+            }
+
             fn empty() -> $model {
                 $model {
                    $(
-                        $field_name: None,
-                    )+
+                       $field_name: None,
+                   )+
+                   __meta: $model_meta::new()
                 }
             }
 
@@ -37,7 +93,8 @@ macro_rules! define_model {
                         $model {
                            $(
                                 $field_name: Some(row.get(stringify!($field_name))),
-                            )+
+                           )+
+                           __meta: $model_meta::new()
                         }
                     },
                     &::deuterium::SelectOnly(_) => {
@@ -78,6 +135,63 @@ macro_rules! define_model {
                     ::deuterium::NamedField::<$field_type>::new(stringify!($field_name), $model::table_name())
                 }
             )+   
+
+            pub fn primary_key_f() -> ::deuterium::NamedField<Uuid> {
+                $model::id_f()
+            }
+
+            pub fn create(&mut self) -> ::deuterium::InsertQuery<(), (), $model, (), ()> {
+                let query = {
+                    let mut fields: Vec<&::deuterium::Field> = vec![];
+                    let mut values: Vec<&::deuterium::ToExpression<()>> = vec![];
+
+                    self.set_created_at(::time::get_time());
+                    self.set_updated_at(::time::get_time());
+
+                    $(
+                        let $field_name;
+                        if self.__meta.$field_changed_flag == true {
+                            $field_name = $model::$field_name_f();
+                            fields.push(&$field_name);
+                            values.push(self.$field_get());
+                        }
+                    )+  
+                    let mut query = $model::table().insert_fields(fields.as_slice());
+                    query.push_untyped(values.as_slice());
+                    query 
+                };
+
+                $(
+                    if self.__meta.$field_changed_flag == true {
+                        self.__meta.$field_changed_flag = false;
+                    }
+                )+  
+
+                query
+            }   
+
+            pub fn update(&mut self) -> ::deuterium::UpdateQuery<(), ::deuterium::NoResult, $model> {
+                self.set_updated_at(::time::get_time());
+                let mut query = $model::table().update();
+
+                $(
+                    if self.__meta.$field_changed_flag == true {
+                        let field = $model::$field_name_f().set(self.$field_get());
+                        query = query.field(field);
+                        self.__meta.$field_changed_flag = false;
+                    }
+                )+ 
+
+                query.where_(self.lookup_predicate())
+            }   
+
+            pub fn delete(&mut self) -> ::deuterium::DeleteQuery<(), ::deuterium::NoResult, $model> {
+                $model::table().delete().where_(self.lookup_predicate())
+            }
+
+            pub fn lookup_predicate(&self) -> ::deuterium::RcPredicate {
+                $model::primary_key_f().is(self.get_primary().clone())
+            }
         }
 
         impl ::deuterium::Table for $table {
@@ -123,13 +237,11 @@ macro_rules! define_model {
             fn as_model_select_query(&self) -> &::deuterium::SelectQuery<T, ::deuterium::LimitMany, $model>;
 
             fn query_list(&self, cn: &::postgres::Connection, params: &[&::postgres::types::ToSql]) -> Vec<$model> {
-                let (ctx, maybe_stm) = ::deuterium_orm::adapter::postgres::PostgresAdapter::prepare_query(self, cn);
-                let stm = maybe_stm.unwrap();
-                let rows = ::deuterium_orm::adapter::postgres::PostgresAdapter::exec(&stm, params, ctx.data()).unwrap();
-
-                rows.map(|row| {
-                    $model::from_row(self.as_model_select_query(), &row)
-                }).collect()
+                query_pg!(self, cn, params, rows, {
+                    rows.unwrap().map(|row| {
+                        $model::from_row(self.as_model_select_query(), &row)
+                    }).collect()
+                })
             }
         }
 
@@ -138,21 +250,17 @@ macro_rules! define_model {
             fn as_model_select_query(&self) -> &::deuterium::SelectQuery<T, ::deuterium::LimitOne, $model>;
 
             fn query_list(&self, cn: &::postgres::Connection, params: &[&::postgres::types::ToSql]) -> Vec<$model> {
-                let (ctx, maybe_stm) = ::deuterium_orm::adapter::postgres::PostgresAdapter::prepare_query(self, cn);
-                let stm = maybe_stm.unwrap();
-                let rows = ::deuterium_orm::adapter::postgres::PostgresAdapter::exec(&stm, params, ctx.data()).unwrap();
-                
-                rows.map(|row| {
-                    $model::from_row(self.as_model_select_query(), &row)
-                }).collect()
+                query_pg!(self, cn, params, rows, {
+                    rows.unwrap().map(|row| {
+                        $model::from_row(self.as_model_select_query(), &row)
+                    }).collect()
+                })
             }
 
             fn query(&self, cn: &::postgres::Connection, params: &[&::postgres::types::ToSql]) -> Option<$model> {
-                let (ctx, maybe_stm) = ::deuterium_orm::adapter::postgres::PostgresAdapter::prepare_query(self, cn);
-                let stm = maybe_stm.unwrap();
-                let mut rows = ::deuterium_orm::adapter::postgres::PostgresAdapter::exec(&stm, params, ctx.data()).unwrap();
-
-                rows.next().map(|row| $model::from_row(self.as_model_select_query(), &row))
+                query_pg!(self, cn, params, rows, {
+                    rows.unwrap().next().map(|row| $model::from_row(self.as_model_select_query(), &row))
+                })
             }
         }
 

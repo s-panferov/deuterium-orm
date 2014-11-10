@@ -63,7 +63,36 @@ impl PostgresAdapter {
         final_params
     }
 
-    pub fn exec<'conn, 'a>(stm: &'conn Statement<'conn>, params: &[&'a ToSql], ctx_params: &'a[Box<AsPostgresValue + Send + Sync>]) -> PostgresResult<Rows<'conn>> {
+    pub fn query<'conn, 'a>(stm: &'conn Statement<'conn>, params: &[&'a ToSql], ctx_params: &'a[Box<AsPostgresValue + Send + Sync>]) -> PostgresResult<Rows<'conn>> {
         stm.query(PostgresAdapter::prepare_params(params, ctx_params).as_slice())
     }
+
+    pub fn execute<'conn, 'a>(stm: &'conn Statement<'conn>, params: &[&'a ToSql], ctx_params: &'a[Box<AsPostgresValue + Send + Sync>]) -> PostgresResult<uint> {
+        stm.execute(PostgresAdapter::prepare_params(params, ctx_params).as_slice())
+    }
 }
+
+#[macro_export]
+macro_rules! to_sql_string_pg(
+    ($query:expr) => ({
+        let mut ctx = SqlContext::new(box ::deuterium::sql::adapter::PostgreSqlAdapter);
+        $query.to_final_sql(&mut ctx)
+    })
+)
+
+#[macro_export]
+macro_rules! query_pg(
+    ($query:expr, $cn:expr, $params:expr, $rows:ident, $blk:block) => ({
+        let (ctx, maybe_stm) = ::deuterium_orm::adapter::postgres::PostgresAdapter::prepare_query($query, $cn);
+        let stm = maybe_stm.unwrap();
+        let $rows = ::deuterium_orm::adapter::postgres::PostgresAdapter::query(&stm, $params, ctx.data());
+        
+        $blk
+    });
+
+    ($query:expr, $cn:expr, $params:expr) => ({
+        let (ctx, maybe_stm) = ::deuterium_orm::adapter::postgres::PostgresAdapter::prepare_query($query, $cn);
+        let stm = maybe_stm.unwrap();
+        ::deuterium_orm::adapter::postgres::PostgresAdapter::execute(&stm, $params, ctx.data())
+    })
+)

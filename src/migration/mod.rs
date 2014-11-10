@@ -4,7 +4,7 @@ use postgres::Connection;
 use std::collections::hash_map::HashMap;
 
 pub fn gen_timecode() -> String {
-    now_utc().strftime("%y%m%d%H%M%S").unwrap()
+    now_utc().strftime("%y%m%d%H%M%S").unwrap().to_string()
 }
 
 pub fn gen_full_name(name: &str) -> String {

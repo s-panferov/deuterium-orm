@@ -43,11 +43,21 @@ impl Generate<()> for ModelState {
                 _ => panic!("Can't use unnamed fields in models")
             };
 
-            ts_fields.push((field_name.to_string(), field_ty, format!("{}_f", field_name), visibility));
+            ts_fields.push((
+                field_name.to_string(), 
+                field_ty, 
+                format!("{}_f", field_name),  
+                format!("get_{}", field_name),  
+                format!("set_{}", field_name),  
+                format!("__{}_changed", field_name),  
+                format!("{}_changed", field_name),  
+                visibility
+            ));
         }
 
-        let ty_def_macro_body = format!("{}, {}, {}, {}, \"{}\", {}",
+        let ty_def_macro_body = format!("{}, {}, {}, {}, {}, \"{}\", {}",
             struct_name.name.as_str(),
+            struct_name.name.as_str().to_string() + "Meta",
             ts_name,
             ts_name + "ManySelectQueryExt",
             ts_name + "OneSelectQueryExt",
