@@ -70,34 +70,7 @@ impl Generate<()> for ModelState {
 
         let mut impls = vec![];
 
-        let impl_mac = P(ast::Item {
-            ident: cx.ident_of(""),
-            attrs: vec![],
-            id: ast::DUMMY_NODE_ID,
-            node: ast::ItemMac(Spanned{
-                node: ast::MacInvocTT(
-                    ast::Path {
-                        span: sp,
-                        global: false,
-                        segments: vec![ast::PathSegment{
-                            identifier: cx.ident_of("define_model"),
-                            parameters: ast::AngleBracketedParameters(
-                                ast::AngleBracketedParameterData {
-                                    lifetimes: vec![],
-                                    types: OwnedSlice::empty()  
-                                }
-                            )
-                        }]
-                    },
-                    cx.parse_tts(ty_def_macro_body),
-                    0
-                ),
-                span: sp
-            }),
-            vis: self.model.vis,
-            span: sp
-        });
-
+        let impl_mac = generate_macro_invocation(cx, "define_model", ty_def_macro_body, sp);
         impls.push(impl_mac);
 
         match self.primary_key {
@@ -105,37 +78,10 @@ impl Generate<()> for ModelState {
             Some(ref primary_key) if primary_key.is_empty() => panic!("Please provide primary key for {}", struct_name),
             Some(ref primary_key) => {
                 let lookup_predicate = generate_lookup_predicate(&struct_name, primary_key);
-
-                let impl_primary_key_mac = P(ast::Item {
-                    ident: cx.ident_of(""),
-                    attrs: vec![],
-                    id: ast::DUMMY_NODE_ID,
-                    node: ast::ItemMac(Spanned{
-                        node: ast::MacInvocTT(
-                            ast::Path {
-                                span: sp,
-                                global: false,
-                                segments: vec![ast::PathSegment{
-                                    identifier: cx.ident_of("primary_key"),
-                                    parameters: ast::AngleBracketedParameters(
-                                        ast::AngleBracketedParameterData {
-                                            lifetimes: vec![],
-                                            types: OwnedSlice::empty()  
-                                        }
-                                    )
-                                }]
-                            },
-                            cx.parse_tts(format!("self, {}, {}", 
-                                struct_name,
-                                lookup_predicate
-                            )),
-                            0
-                        ),
-                        span: sp
-                    }),
-                    vis: self.model.vis,
-                    span: sp
-                });
+                let impl_primary_key_mac = generate_macro_invocation(cx, "primary_key", format!("self, {}, {}", 
+                    struct_name,
+                    lookup_predicate
+                ), sp);
 
                 impls.push(impl_primary_key_mac);
             }
@@ -186,36 +132,38 @@ impl Generate<()> for MigrationState {
         let macro_body = migrations.connect(", ");
 
         let mut impls = vec![];
-        let impl_mac = P(ast::Item {
-            ident: cx.ident_of(""),
-            attrs: vec![],
-            id: ast::DUMMY_NODE_ID,
-            node: ast::ItemMac(Spanned{
-                node: ast::MacInvocTT(
-                    ast::Path {
-                        span: sp,
-                        global: false,
-                        segments: vec![ast::PathSegment{
-                            identifier: cx.ident_of("migrations"),
-                            parameters: ast::AngleBracketedParameters(
-                                ast::AngleBracketedParameterData {
-                                    lifetimes: vec![],
-                                    types: OwnedSlice::empty()  
-                                }
-                            )
-                        }]
-                    },
-                    cx.parse_tts(macro_body),
-                    0
-                ),
-                span: sp
-            }),
-            vis: ast::Public,
-            span: sp
-        });
-
-        impls.push(impl_mac);
+        impls.push(generate_macro_invocation(cx, "migrations", macro_body, sp));
         base::MacItems::new(impls.into_iter())
 
     }
+}
+
+fn generate_macro_invocation(cx: &mut base::ExtCtxt, macro_name: &str, macro_body: String, sp: codemap::Span) -> P<ast::Item> {
+    P(ast::Item {
+        ident: cx.ident_of(""),
+        attrs: vec![],
+        id: ast::DUMMY_NODE_ID,
+        node: ast::ItemMac(Spanned{
+            node: ast::MacInvocTT(
+                ast::Path {
+                    span: sp,
+                    global: false,
+                    segments: vec![ast::PathSegment{
+                        identifier: cx.ident_of(macro_name),
+                        parameters: ast::AngleBracketedParameters(
+                            ast::AngleBracketedParameterData {
+                                lifetimes: vec![],
+                                types: OwnedSlice::empty()  
+                            }
+                        )
+                    }]
+                },
+                cx.parse_tts(macro_body),
+                0
+            ),
+            span: sp
+        }),
+        vis: ast::Public,
+        span: sp
+    })
 }
