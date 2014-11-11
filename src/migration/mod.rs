@@ -24,14 +24,33 @@ pub fn create_migration_file(name: &str, base_path: Path) -> String {
     full_name
 }
 
+pub struct Migration<Conn> {
+    version: u64,
+    name: String,
+    raw: Box<RawMigration<Conn> + 'static>
+}
+
+impl<Conn> Migration<Conn> {
+    pub fn new(version: u64, name: &str, raw: Box<RawMigration<Conn> + 'static>) -> Migration<Conn> {
+        Migration {
+            version: version,
+            name: name.to_string(),
+            raw: raw
+        }
+    }
+
+    pub fn version(&self) -> &u64 { &self.version }
+    pub fn name(&self) -> &str { self.name.as_slice() }
+    pub fn raw(&self) -> &Box<RawMigration<Conn> + 'static> { &self.raw }
+}
+
 pub trait RawMigration<Conn> {
-    fn version(&self) -> u64;
     fn up(&self, cn: &Conn);
     fn down(&self, cn: &Conn);
 }
 
-pub type Migrations = Vec<Box<RawMigration<Connection> + 'static>>;
-pub type MigrationRefs<'a> = Vec<&'a Box<RawMigration<Connection> + 'static>>;
+pub type Migrations = Vec<Box<Migration<Connection>>>;
+pub type MigrationRefs<'a> = Vec<&'a Box<Migration<Connection>>>;
 
 pub fn ensure_schema_migrations(cn: &Connection) {
     cn.execute("CREATE TABLE IF NOT EXISTS schema_migrations (
@@ -81,10 +100,10 @@ pub fn run(migrations: &Migrations, cn: &Connection) {
     }).collect();
 
     for migration in migrations_to_run.iter() {
-        migration.up(cn);
+        migration.raw().up(cn);
         insert_version(&migration.version().to_i64().unwrap(), cn);
 
-        println!("Migration completed: {}", migration.version());
+        println!("Migration completed: {} {}", migration.version(), migration.name());
     }
 }
 
@@ -99,9 +118,9 @@ pub fn rollback(steps: uint, migrations: &Migrations, cn: &Connection) {
     }).collect();
 
     for migration in migrations_to_run.iter() {
-        migration.down(cn);
+        migration.raw().down(cn);
         delete_version(&migration.version().to_i64().unwrap(), cn);
 
-        println!("Migration reverted: {}", migration.version());
+        println!("Migration reverted: {} {}", migration.version(), migration.name());
     }
 }
