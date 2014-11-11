@@ -54,14 +54,16 @@ impl Generate<()> for ModelState {
             ));
         }
 
-        let ty_def_macro_body = format!("{}, {}, {}, {}, {}, \"{}\", {}",
+        let ty_def_macro_body = format!("{}, {}, {}, {}, {}, \"{}\", {}, {}, {}",
             struct_name,
             struct_name + "Meta",
             ts_name,
             ts_name + "ManySelectQueryExt",
             ts_name + "OneSelectQueryExt",
             name.name.as_str(),
-            ts_fields.to_string()
+            ts_fields.to_string(),
+            self.before_create.to_string(),
+            self.before_save.to_string()
         );
 
         let mut impls = vec![];

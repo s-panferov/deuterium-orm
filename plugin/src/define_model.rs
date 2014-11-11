@@ -21,7 +21,14 @@ macro_rules! define_model {
             $field_set:ident, 
             $field_changed_flag:ident, // the name of internal flag field
             $field_changed_accessor:ident, // accessor name
-            $($vis:tt)*)),+ ]
+            $($vis:tt)*)),+ ],
+
+        [
+            $($before_create:ident),*
+        ],
+        [
+            $($before_save:ident),*
+        ]
     ) => (
         #[deriving(Default, Show, Clone)]
         #[allow(dead_code)]
@@ -136,9 +143,14 @@ macro_rules! define_model {
                 let query = {
                     let mut fields: Vec<&::deuterium::Field> = vec![];
                     let mut values: Vec<&::deuterium::ToExpression<()>> = vec![];
+                    
+                    $(
+                        $before_create(self);
+                    )*                
 
-                    self.set_created_at(::time::get_time());
-                    self.set_updated_at(::time::get_time());
+                    $(
+                        $before_save(self);
+                    )*
 
                     $(
                         let $field_name;
@@ -148,6 +160,7 @@ macro_rules! define_model {
                             values.push(self.$field_get());
                         }
                     )+  
+
                     let mut query = $model::table().insert_fields(fields.as_slice());
                     query.push_untyped(values.as_slice());
                     query 
@@ -163,7 +176,11 @@ macro_rules! define_model {
             }   
 
             pub fn update(&mut self) -> ::deuterium::UpdateQuery<(), ::deuterium::NoResult, $model> {
-                self.set_updated_at(::time::get_time());
+
+                $(
+                    $before_save(self);
+                )*
+
                 let mut query = $model::table().update();
 
                 $(
