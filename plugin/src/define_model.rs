@@ -14,14 +14,15 @@ macro_rules! define_model {
         $table_name:expr, 
         // Collection of fields
         [ $((
-            $field_name:ident, 
-            $field_type:ty, 
-            $field_name_f:ident, 
-            $field_get:ident, 
-            $field_set:ident, 
+            $field_name:ident, // Field name, e.g. id
+            $field_type:ty, // Field type, e.g. Uuid
+            $field_name_f:ident, // Own field getter name, e.g. `id_f`
+            $field_get:ident,  // Field's value getter name
+            $field_set:ident,  // Field's value setter name
             $field_changed_flag:ident, // the name of internal flag field
             $field_changed_accessor:ident, // accessor name
-            $($vis:tt)*)),+ ],
+            $($vis:tt)*)),+ // Hacky field visibility (not usable for now)
+        ],
 
         [
             $($before_create:ident),*
@@ -30,14 +31,8 @@ macro_rules! define_model {
             $($before_save:ident),*
         ]
     ) => (
-        #[deriving(Default, Show, Clone)]
-        #[allow(dead_code)]
-        pub struct $model {
-            $(
-                $field_name: Option<$field_type>,
-            )+  
-            __meta: $model_meta
-        }
+
+        // Generate Meta struct to hold dirty flags and other helpful internal state.
 
         #[deriving(Default, Show, Clone)]
         #[allow(dead_code)]
@@ -60,7 +55,23 @@ macro_rules! define_model {
             }
         }
 
+        // Generate new model struct with all fields of type Option<$field_type>,
+        // where None case we need to tell that field was not loaded from database.
+        // New struct also will include __meta field where internal model state is stored.
+
+        #[deriving(Default, Show, Clone)]
+        #[allow(dead_code)]
+        pub struct $model {
+            $(
+                $field_name: Option<$field_type>,
+            )+  
+            __meta: $model_meta
+        }
+
         impl $model {
+
+            // Generate a set of methods to deal with fields values and fields dirty state.
+            // We generate a getter, a setter and an accessor for each defined field.
 
             $(
                 #[allow(dead_code)]
@@ -81,6 +92,9 @@ macro_rules! define_model {
                 }
             )+  
 
+            // Generate method to create empty model instance. `Empty` here means that all the fields
+            // are in undefined state and all dirty bits are disabled.
+
             fn empty() -> $model {
                 $model {
                    $(
@@ -89,6 +103,8 @@ macro_rules! define_model {
                    __meta: $model_meta::new()
                 }
             }
+
+            // Very helpful stuff to unwrap Model instance from database Row.
 
             fn from_row<T, L>(query: &::deuterium::SelectQuery<T, L, $model>, row: &::postgres::Row) -> $model {
                 match &query.select {
@@ -114,6 +130,8 @@ macro_rules! define_model {
                 }
             }
         }
+
+        // We also generate ModelTable struct to deal with requests. 
 
         #[deriving(Clone)]
         pub struct $table(::deuterium::TableDef);
@@ -233,10 +251,16 @@ macro_rules! define_model {
             }
         }
 
+        // Implement an ability to produce typed Deuterium queries. 
+
         impl ::deuterium::Selectable<$model> for $table { }
         impl ::deuterium::Updatable<$model> for $table { }
         impl ::deuterium::Deletable<$model> for $table { }
         impl ::deuterium::Insertable<$model> for $table { }
+
+        // Generate an extensions to SelectQuery. These extensions provide query_ methods
+        // that allows to execute queries in database and unwrap results to an Iterator, a Vec or just an
+        // instance of Model.
 
         // SelectQuery extension
         pub trait $many_select_query_ext<T>: ::deuterium::QueryToSql {
@@ -293,7 +317,6 @@ macro_rules! primary_key(
                 $body
             }
         }
-        // TODO lookup_predicate
         // TODO get_primary()
         // TODO get_primary_f()
     )
