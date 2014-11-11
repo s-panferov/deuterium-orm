@@ -74,10 +74,6 @@ macro_rules! define_model {
                 }
             )+  
 
-            pub fn get_primary(&self) -> &Uuid {
-                self.get_id()
-            }
-
             fn empty() -> $model {
                 $model {
                    $(
@@ -136,10 +132,6 @@ macro_rules! define_model {
                 }
             )+   
 
-            pub fn primary_key_f() -> ::deuterium::NamedField<Uuid> {
-                $model::id_f()
-            }
-
             pub fn create(&mut self) -> ::deuterium::InsertQuery<(), (), $model, (), ()> {
                 let query = {
                     let mut fields: Vec<&::deuterium::Field> = vec![];
@@ -189,9 +181,6 @@ macro_rules! define_model {
                 $model::table().delete().where_(self.lookup_predicate())
             }
 
-            pub fn lookup_predicate(&self) -> ::deuterium::RcPredicate {
-                $model::primary_key_f().is(self.get_primary().clone())
-            }
         }
 
         impl ::deuterium::Table for $table {
@@ -277,3 +266,18 @@ macro_rules! define_model {
         }
     )
 }
+
+#[macro_export]
+macro_rules! primary_key(
+    ($s:ident, $model:ident, $body:block) => (
+        impl $model {
+            #[allow(dead_code)]
+            pub fn lookup_predicate(&$s) -> ::deuterium::RcPredicate {
+                $body
+            }
+        }
+        // TODO lookup_predicate
+        // TODO get_primary()
+        // TODO get_primary_f()
+    )
+)

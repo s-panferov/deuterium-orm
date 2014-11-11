@@ -1,7 +1,7 @@
 use syntax::{ast, codemap};
 use syntax::ext::base;
 use syntax::parse::parser::Parser;
-use syntax::attr::first_attr_value_str_by_name;
+use syntax::attr::{AttrMetaMethods};
 
 use model::{ModelState};
 
@@ -38,7 +38,12 @@ impl<'a, 'b> Parse<(codemap::Span, &'a mut base::ExtCtxt<'b>, Option<ast::Ident>
             }
         };
 
-        let primary_key = first_attr_value_str_by_name(model_struct.attrs.as_slice(), "pk").map(|s| s.get().to_string());
+        let primary_key = model_struct.attrs.as_slice().iter()
+            .find(|at| at.check_name("primary_key"))
+            .and_then(|at| {
+                let mi_vec: Vec<String> = at.meta_item_list().unwrap().iter().map(|mi| mi.name().to_string()).collect();
+                Some(mi_vec)
+            });
 
         ModelState {
             mod_name: name,

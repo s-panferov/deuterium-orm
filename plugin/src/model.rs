@@ -9,7 +9,7 @@ use generate::Generate;
 pub struct ModelState {
     pub mod_name: ast::Ident,
     pub model: P<ast::Item>,
-    pub primary_key: Option<String>
+    pub primary_key: Option<Vec<String>>
 }
 
 pub fn model<'a>(cx: &'a mut base::ExtCtxt, sp: codemap::Span,

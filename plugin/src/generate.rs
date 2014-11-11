@@ -17,9 +17,8 @@ pub trait Generate<Cfg> {
 impl Generate<()> for ModelState {
     fn generate<'a>(self, sp: codemap::Span, cx: &mut base::ExtCtxt, _: ()) -> Box<base::MacResult + 'a> {
         let name = self.mod_name.clone();
-        let struct_name = self.model.ident.clone();
-
-        let ts_name = struct_name.name.as_str().to_string() + "Table".to_string();
+        let struct_name = self.model.ident.clone().name.as_str().to_string();
+        let ts_name = struct_name + "Table".to_string();
         
         let model_struct_def = match &self.model.node {
             &ast::ItemStruct(ref model_struct_def, _) => model_struct_def.clone(),
@@ -56,14 +55,16 @@ impl Generate<()> for ModelState {
         }
 
         let ty_def_macro_body = format!("{}, {}, {}, {}, {}, \"{}\", {}",
-            struct_name.name.as_str(),
-            struct_name.name.as_str().to_string() + "Meta",
+            struct_name,
+            struct_name + "Meta",
             ts_name,
             ts_name + "ManySelectQueryExt",
             ts_name + "OneSelectQueryExt",
             name.name.as_str(),
             ts_fields.to_string()
         );
+
+        let mut impls = vec![];
 
         let impl_mac = P(ast::Item {
             ident: cx.ident_of(""),
@@ -78,7 +79,7 @@ impl Generate<()> for ModelState {
                             identifier: cx.ident_of("define_model"),
                             parameters: ast::AngleBracketedParameters(
                                 ast::AngleBracketedParameterData {
-                                   lifetimes: vec![],
+                                    lifetimes: vec![],
                                     types: OwnedSlice::empty()  
                                 }
                             )
@@ -93,6 +94,60 @@ impl Generate<()> for ModelState {
             span: sp
         });
 
-        base::MacItems::new(vec![impl_mac].into_iter())
+        impls.push(impl_mac);
+
+        match self.primary_key {
+            None => panic!("Please provide primary key for {}", struct_name),
+            Some(ref primary_key) if primary_key.is_empty() => panic!("Please provide primary key for {}", struct_name),
+            Some(ref primary_key) => {
+                let lookup_predicate = generate_lookup_predicate(&struct_name, primary_key);
+
+                let impl_primary_key_mac = P(ast::Item {
+                    ident: cx.ident_of(""),
+                    attrs: vec![],
+                    id: ast::DUMMY_NODE_ID,
+                    node: ast::ItemMac(Spanned{
+                        node: ast::MacInvocTT(
+                            ast::Path {
+                                span: sp,
+                                global: false,
+                                segments: vec![ast::PathSegment{
+                                    identifier: cx.ident_of("primary_key"),
+                                    parameters: ast::AngleBracketedParameters(
+                                        ast::AngleBracketedParameterData {
+                                            lifetimes: vec![],
+                                            types: OwnedSlice::empty()  
+                                        }
+                                    )
+                                }]
+                            },
+                            cx.parse_tts(format!("self, {}, {}", 
+                                struct_name,
+                                lookup_predicate
+                            )),
+                            0
+                        ),
+                        span: sp
+                    }),
+                    vis: self.model.vis,
+                    span: sp
+                });
+
+                impls.push(impl_primary_key_mac);
+            }
+        }
+        
+        base::MacItems::new(impls.into_iter())
     }
+}
+
+fn generate_lookup_predicate(struct_name: &String, primary_key: &Vec<String>) -> String {
+    let keys: Vec<String> = primary_key.iter().map(|pk| {
+        format!("({}::{}_f().is(self.get_{}().clone()))", 
+            struct_name, 
+            pk,
+            pk
+        )
+    }).collect();
+    format!("{{{}}}", keys.connect(".and"))
 }
