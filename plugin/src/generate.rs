@@ -8,7 +8,9 @@ use syntax::ext::quote::rt::ToSource;
 
 use syntax::ext::build::AstBuilder;
 
-use model::{ModelState};
+use std::ascii::AsciiExt;
+
+use model::{ModelState, MigrationState};
 
 pub trait Generate<Cfg> {
     fn generate<'a>(self, codemap::Span, &mut base::ExtCtxt, Cfg) -> Box<base::MacResult + 'a>;
@@ -152,4 +154,68 @@ fn generate_lookup_predicate(struct_name: &String, primary_key: &Vec<String>) ->
         )
     }).collect();
     format!("{{{}}}", keys.connect(".and"))
+}
+
+impl Generate<()> for MigrationState {
+    fn generate<'a>(self, sp: codemap::Span, cx: &mut base::ExtCtxt, _: ()) -> Box<base::MacResult + 'a> {
+
+        let pathes = ::std::io::fs::readdir(&self.path).unwrap();
+        let mut migrations = vec![];
+
+        let path_checker = regex!(r"^_(\d{12})");
+        let upcaser = regex!(r"_([a-z])");
+
+        for path in pathes.iter() {
+            let filestem = path.filestem_str().unwrap();
+            let captures = path_checker.captures(filestem);
+
+            if captures.is_none() { continue };
+
+            let captures = captures.unwrap();
+            let tm = captures.at(1);
+            let version: u64 = from_str(tm).unwrap();
+            let name = filestem.replace(captures.at(0), "");
+
+            let name = upcaser.replace_all(name.as_slice(), |caps: &::regex::Captures| {
+                caps.at(1).to_ascii_upper()
+            });
+
+            migrations.push((filestem.to_string(), version, name.to_string()).to_string());
+        }
+
+        let macro_body = migrations.connect(", ");
+
+        let mut impls = vec![];
+        let impl_mac = P(ast::Item {
+            ident: cx.ident_of(""),
+            attrs: vec![],
+            id: ast::DUMMY_NODE_ID,
+            node: ast::ItemMac(Spanned{
+                node: ast::MacInvocTT(
+                    ast::Path {
+                        span: sp,
+                        global: false,
+                        segments: vec![ast::PathSegment{
+                            identifier: cx.ident_of("migrations"),
+                            parameters: ast::AngleBracketedParameters(
+                                ast::AngleBracketedParameterData {
+                                    lifetimes: vec![],
+                                    types: OwnedSlice::empty()  
+                                }
+                            )
+                        }]
+                    },
+                    cx.parse_tts(macro_body),
+                    0
+                ),
+                span: sp
+            }),
+            vis: ast::Public,
+            span: sp
+        });
+
+        impls.push(impl_mac);
+        base::MacItems::new(impls.into_iter())
+
+    }
 }

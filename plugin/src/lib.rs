@@ -3,14 +3,20 @@
 #![feature(tuple_indexing)]
 #![feature(macro_rules)]
 #![feature(concat_idents)]
+#![feature(phase)]
 
 extern crate rustc;
 extern crate syntax;
+
+#[phase(plugin)]
+extern crate regex_macros;
+extern crate regex;
 
 use rustc::plugin;
 use syntax::parse::token;
 
 use model::model;
+use model::migration;
 
 mod generate;
 mod define_model;
@@ -22,6 +28,9 @@ mod parse;
 pub fn plugin_registrar(reg: &mut plugin::Registry) {
     reg.register_syntax_extension(token::intern("deuterium_model"), 
         syntax::ext::base::IdentTT(box model, None));
+
+    reg.register_syntax_extension(token::intern("load_migrations"), 
+        syntax::ext::base::NormalTT(box migration, None));
 }
 
 #[macro_export]

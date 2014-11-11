@@ -14,11 +14,23 @@ pub struct ModelState {
     pub before_save: Vec<String>,
 }
 
-pub fn model<'a>(cx: &'a mut base::ExtCtxt, sp: codemap::Span,
-                name: ast::Ident, tokens: Vec<ast::TokenTree>) -> Box<base::MacResult + 'a> {
+pub fn model<'cx>(cx: &'cx mut base::ExtCtxt, sp: codemap::Span,
+                name: ast::Ident, tokens: Vec<ast::TokenTree>) -> Box<base::MacResult + 'cx> {
     
     // Parse a full ModelState from the input, emitting errors if used incorrectly.
     let state: ModelState = Parse::parse(&mut parse::tts_to_parser(cx.parse_sess(), tokens, cx.cfg()), (sp, &mut*cx, Some(name)));
 
+    state.generate(sp, cx, ())
+}
+
+#[deriving(Clone)]
+pub struct MigrationState {
+    pub path: Path
+}
+
+pub fn migration<'cx>(cx: &'cx mut base::ExtCtxt, sp: codemap::Span, tokens: &[ast::TokenTree]) -> Box<base::MacResult + 'cx> {
+    
+    // Parse a full ModelState from the input, emitting errors if used incorrectly.
+    let state: MigrationState = Parse::parse(&mut parse::tts_to_parser(cx.parse_sess(), tokens.to_vec(), cx.cfg()), (sp, &mut*cx));
     state.generate(sp, cx, ())
 }
