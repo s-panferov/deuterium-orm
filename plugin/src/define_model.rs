@@ -103,9 +103,11 @@ macro_rules! define_model {
                    __meta: $model_meta::new()
                 }
             }
+        }
 
-            // Very helpful stuff to unwrap Model instance from database Row.
-
+        // Very helpful stuff to unwrap Model instance from database Row.
+        #[cfg(feature = "postgres")]
+        impl ::deuterium_orm::adapter::postgres::FromRow for $model {
             fn from_row<T, L>(query: &::deuterium::SelectQuery<T, L, $model>, row: &::postgres::Row) -> $model {
                 match &query.select {
                     &::deuterium::SelectAll => {
@@ -258,53 +260,6 @@ macro_rules! define_model {
         impl ::deuterium::Deletable<$model> for $table { }
         impl ::deuterium::Insertable<$model> for $table { }
 
-        // Generate an extensions to SelectQuery. These extensions provide query_ methods
-        // that allows to execute queries in database and unwrap results to an Iterator, a Vec or just an
-        // instance of Model.
-
-        // SelectQuery extension
-        pub trait $many_select_query_ext<T>: ::deuterium::QueryToSql {
-            fn as_model_select_query(&self) -> &::deuterium::SelectQuery<T, ::deuterium::LimitMany, $model>;
-
-            fn query_list(&self, cn: &::postgres::Connection, params: &[&::postgres::types::ToSql]) -> Vec<$model> {
-                query_pg!(self, cn, params, rows, {
-                    rows.unwrap().map(|row| {
-                        $model::from_row(self.as_model_select_query(), &row)
-                    }).collect()
-                })
-            }
-        }
-
-        // SelectQuery extension
-        pub trait $one_select_query_ext<T>: ::deuterium::QueryToSql {
-            fn as_model_select_query(&self) -> &::deuterium::SelectQuery<T, ::deuterium::LimitOne, $model>;
-
-            fn query_list(&self, cn: &::postgres::Connection, params: &[&::postgres::types::ToSql]) -> Vec<$model> {
-                query_pg!(self, cn, params, rows, {
-                    rows.unwrap().map(|row| {
-                        $model::from_row(self.as_model_select_query(), &row)
-                    }).collect()
-                })
-            }
-
-            fn query(&self, cn: &::postgres::Connection, params: &[&::postgres::types::ToSql]) -> Option<$model> {
-                query_pg!(self, cn, params, rows, {
-                    rows.unwrap().next().map(|row| $model::from_row(self.as_model_select_query(), &row))
-                })
-            }
-        }
-
-        impl<T> $many_select_query_ext<T> for ::deuterium::SelectQuery<T, ::deuterium::LimitMany, $model> {
-            fn as_model_select_query(&self) -> &::deuterium::SelectQuery<T, ::deuterium::LimitMany, $model> {
-                self
-            }
-        }
-
-        impl<T> $one_select_query_ext<T> for ::deuterium::SelectQuery<T, ::deuterium::LimitOne, $model> {
-            fn as_model_select_query(&self) -> &::deuterium::SelectQuery<T, ::deuterium::LimitOne, $model> {
-                self
-            }
-        }
     )
 }
 

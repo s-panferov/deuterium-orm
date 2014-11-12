@@ -72,27 +72,103 @@ impl PostgresAdapter {
     }
 }
 
+pub trait FromRow {
+    fn from_row<T, L>(query: &::deuterium::SelectQuery<T, L, Self>, row: &::postgres::Row) -> Self;
+}
+
+pub fn from_row<T, L, M: FromRow>(query: &::deuterium::SelectQuery<T, L, M>, row: &::postgres::Row) -> M {
+    FromRow::from_row(query, row)
+}
+
+#[macro_export]
+macro_rules! unwrap_or_report_sql_error(
+    () => ()
+)
+
 #[macro_export]
 macro_rules! to_sql_string_pg(
     ($query:expr) => ({
-        let mut ctx = SqlContext::new(box ::deuterium::sql::adapter::PostgreSqlAdapter);
+        let mut ctx = ::deuterium::SqlContext::new(box ::deuterium::sql::adapter::PostgreSqlAdapter);
         $query.to_final_sql(&mut ctx)
     })
 )
 
 #[macro_export]
-macro_rules! query_pg(
+macro_rules! query_pg_safe(
     ($query:expr, $cn:expr, $params:expr, $rows:ident, $blk:block) => ({
         let (ctx, maybe_stm) = ::deuterium_orm::adapter::postgres::PostgresAdapter::prepare_query($query, $cn);
-        let stm = maybe_stm.unwrap();
+        let stm = match maybe_stm {
+            Ok(stm) => stm,
+            Err(e) => panic!("SQL query `{}` panicked at {}:{} with error `{}`", 
+                to_sql_string_pg!($query), file!(), line!(), e
+            )
+        };
+        
         let $rows = ::deuterium_orm::adapter::postgres::PostgresAdapter::query(&stm, $params, ctx.data());
         
         $blk
     });
+)
 
+#[macro_export]
+macro_rules! query_pg(
+    ($query:expr, $cn:expr, $params:expr, $rows:ident, $blk:block) => ({
+        let res = query_pg_safe!($query, $cn, $params, $rows, $blk);
+        match res {
+            Ok(res) => res,
+            Err(e) => panic!("SQL query `{}` panicked at {}:{} with error `{}`", 
+                to_sql_string_pg!($query), file!(), line!(), e
+            )
+        }
+    });
+)
+
+#[macro_export]
+macro_rules! query_models_iter(
+    ($query:expr, $cn:expr, $params:expr) => (
+        query_pg!($query, $cn, $params, rows, {
+            rows.map(|iter| iter.map(|row| {
+                ::deuterium_orm::adapter::postgres::from_row($query, &row)
+            }))
+        })
+    )
+)
+
+#[macro_export]
+macro_rules! query_models(
+    ($query:expr, $cn:expr, $params:expr) => (
+        (query_models_iter!($query, $cn, $params)).collect()
+    )
+)
+
+#[macro_export]
+macro_rules! query_model(
+    ($query:expr, $cn:expr, $params:expr) => (
+        query_pg!($query, $cn, $params, rows, {
+            rows.map(|mut iter| iter.next().map(|row| {
+                ::deuterium_orm::adapter::postgres::from_row($query, &row)
+            }))
+        })
+    )
+)
+
+#[macro_export]
+macro_rules! exec_pg_safe(
     ($query:expr, $cn:expr, $params:expr) => ({
         let (ctx, maybe_stm) = ::deuterium_orm::adapter::postgres::PostgresAdapter::prepare_query($query, $cn);
         let stm = maybe_stm.unwrap();
         ::deuterium_orm::adapter::postgres::PostgresAdapter::execute(&stm, $params, ctx.data())
+    })
+)
+
+#[macro_export]
+macro_rules! exec_pg(
+    ($query:expr, $cn:expr, $params:expr) => ({
+        match exec_pg_safe!($query, $cn, $params) {
+            Ok(res) => res,
+            Err(e) => panic!("SQL query `{}` panicked at {}:{} with error `{}`", 
+                to_sql_string_pg!($query), file!(), line!(), e
+            )
+        }
     })
 )
