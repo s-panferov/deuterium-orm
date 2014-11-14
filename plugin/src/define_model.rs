@@ -159,18 +159,49 @@ macro_rules! define_model {
                 }
             )+   
 
+            fn call_before_create_hooks(&mut self) {
+                $(
+                    $before_create(self);
+                )*  
+            }       
+
+            fn call_after_create_hooks(&mut self) {
+                unimplemented!() 
+            }    
+
+            fn call_before_save_hooks(&mut self) {
+                $(
+                    $before_save(self);
+                )*  
+            }
+
+            fn call_after_save_hooks(&mut self) {
+                unimplemented!() 
+            }
+
+            fn call_before_update_hooks(&mut self) {
+                unimplemented!() 
+            }
+
+            fn call_after_update_hooks(&mut self) {
+                unimplemented!() 
+            }
+
+            fn call_before_destroy_hooks(&mut self) {
+                unimplemented!() 
+            }
+
+            fn call_after_destroy_hooks(&mut self) {
+                unimplemented!() 
+            }
+
             pub fn create(&mut self) -> ::deuterium::InsertQuery<(), (), $model, (), ()> {
                 let query = {
                     let mut fields: Vec<&::deuterium::Field> = vec![];
                     let mut values: Vec<&::deuterium::ToExpression<()>> = vec![];
                     
-                    $(
-                        $before_create(self);
-                    )*                
-
-                    $(
-                        $before_save(self);
-                    )*
+                    self.call_before_create_hooks();         
+                    self.call_before_save_hooks();
 
                     $(
                         let $field_name;
@@ -193,13 +224,11 @@ macro_rules! define_model {
                 )+  
 
                 query
-            }   
+            }
 
             pub fn update(&mut self) -> ::deuterium::UpdateQuery<(), ::deuterium::NoResult, $model> {
 
-                $(
-                    $before_save(self);
-                )*
+                self.call_before_save_hooks();
 
                 let mut query = $model::table().update();
 
