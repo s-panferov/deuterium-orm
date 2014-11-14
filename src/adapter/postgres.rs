@@ -128,10 +128,6 @@ macro_rules! query_models_iter(
     )
 )
 
-fn into_vec() {
-
-}
-
 #[macro_export]
 macro_rules! query_models(
     ($query:expr, $cn:expr, $params:expr) => (
