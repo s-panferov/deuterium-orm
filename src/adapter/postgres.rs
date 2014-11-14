@@ -94,7 +94,7 @@ macro_rules! to_sql_string_pg(
 )
 
 #[macro_export]
-macro_rules! query_pg_safe(
+macro_rules! query_pg(
     ($query:expr, $cn:expr, $params:expr, $rows:ident, $blk:block) => ({
         let (ctx, maybe_stm) = ::deuterium_orm::adapter::postgres::PostgresAdapter::prepare_query($query, $cn);
         let stm = match maybe_stm {
@@ -105,21 +105,15 @@ macro_rules! query_pg_safe(
         };
         
         let $rows = ::deuterium_orm::adapter::postgres::PostgresAdapter::query(&stm, $params, ctx.data());
-        
-        $blk
-    });
-)
 
-#[macro_export]
-macro_rules! query_pg(
-    ($query:expr, $cn:expr, $params:expr, $rows:ident, $blk:block) => ({
-        let res = query_pg_safe!($query, $cn, $params, $rows, $blk);
-        match res {
-            Ok(res) => res,
+        let $rows = match $rows {
+            Ok($rows) => $rows,
             Err(e) => panic!("SQL query `{}` panicked at {}:{} with error `{}`", 
                 to_sql_string_pg!($query), file!(), line!(), e
-            )
-        }
+            ),
+        };
+        
+        $blk
     });
 )
 
@@ -127,17 +121,26 @@ macro_rules! query_pg(
 macro_rules! query_models_iter(
     ($query:expr, $cn:expr, $params:expr) => (
         query_pg!($query, $cn, $params, rows, {
-            rows.map(|iter| iter.map(|row| {
+            rows.map(|row| {
                 ::deuterium_orm::adapter::postgres::from_row($query, &row)
-            }))
+            })
         })
     )
 )
 
+fn into_vec() {
+
+}
+
 #[macro_export]
 macro_rules! query_models(
     ($query:expr, $cn:expr, $params:expr) => (
-        (query_models_iter!($query, $cn, $params)).collect()
+        query_pg!($query, $cn, $params, rows, {
+            let vec: Vec<_> = rows.map(|row| {
+                ::deuterium_orm::adapter::postgres::from_row($query, &row)
+            }).collect();
+            vec
+        })
     )
 )
 
@@ -145,9 +148,9 @@ macro_rules! query_models(
 macro_rules! query_model(
     ($query:expr, $cn:expr, $params:expr) => (
         query_pg!($query, $cn, $params, rows, {
-            rows.map(|mut iter| iter.next().map(|row| {
+            rows.take(1).next().map(|row| {
                 ::deuterium_orm::adapter::postgres::from_row($query, &row)
-            }))
+            })
         })
     )
 )
@@ -171,4 +174,63 @@ macro_rules! exec_pg(
             )
         }
     })
+)
+
+#[macro_export]
+macro_rules! try_pg(
+    ($e:expr) => (
+        match $e {
+            Ok(ok) => ok,
+            Err(err) => return Err(::postgres::Error::PgStreamError(err))
+        }
+    )
+)
+
+#[macro_export]
+macro_rules! deuterium_enum(
+    ($en:ty) => (
+        impl ::postgres::types::FromSql for $en {
+            fn from_sql(_ty: &::postgres::types::Type, raw: &Option<Vec<u8>>) -> ::postgres::Result<$en> {
+                match raw {
+                    &Some(ref buf) => {
+                        let mut reader = ::std::io::BufReader::new(buf[]);
+                        Ok(::std::num::FromPrimitive::from_u8(try_pg!(reader.read_u8())).unwrap()) 
+                    },
+                    &None => {
+                        Err(::postgres::Error::PgBadData)
+                    }
+                }
+                
+            }
+        }
+
+        impl ::deuterium::ToSql for $en {
+            fn to_sql(&self, ctx: &mut ::deuterium::SqlContext) -> String {
+                let i = self.clone() as i16;
+                i.to_predicate_value(ctx)
+            }
+        }
+
+        impl ::deuterium::UntypedExpression for $en {
+            fn expression_as_sql(&self) -> &ToSql {
+                self
+            }
+
+            fn upcast_expression(&self) -> RcExpression {
+                let i = self.clone() as i16;
+                ::std::sync::Arc::new(box i as ::deuterium::BoxedExpression)
+            }
+        }
+
+        impl ::deuterium::ToExpression<$en> for $en {}
+        impl ::deuterium::ToExpression<i16> for $en {}
+        impl ::deuterium::ToExpression<()> for $en {}
+
+        impl ::deuterium::ToPredicateValue for $en { 
+            fn to_predicate_value(&self, ctx: &mut SqlContext) -> String { 
+                let i = self.clone() as i16;
+                ctx.hold(box i)
+            }
+        }
+    )
 )

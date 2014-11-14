@@ -4,6 +4,9 @@
 
 #[phase(plugin)]
 extern crate deuterium_plugin;
+
+#[phase(plugin)]
+extern crate deuterium_orm;
 extern crate deuterium_orm;
 extern crate time;
 extern crate deuterium;
@@ -12,8 +15,6 @@ extern crate postgres;
 extern crate r2d2;
 extern crate r2d2_postgres;
 extern crate test;
-
-use test::Bencher;
 
 use deuterium::*;
 use deuterium_orm::*;
@@ -29,13 +30,23 @@ macro_rules! assert_sql(
     )
 )
 
+#[deriving(Clone, Show, PartialEq, FromPrimitive)]
+pub enum Side {
+    DarkSide,
+    LightSide,
+}
+
+deuterium_enum!(Side)
+
 deuterium_model! jedi {
-    #[primary_key="id"]
+    #[primary_key(id)]
+    #[before_create(created_at)]
+    #[before_save(updated_at)]
     pub struct Jedi {
-        pub id: i32,
-        pub name: String,
+        id: i32,
+        name: String,
         force_level: i32,
-        light_side: Option<bool>,
+        side: Side,
         created_at: Timespec,
         updated_at: Timespec
     }
@@ -47,26 +58,34 @@ impl Jedi {
     }
 }
 
+fn created_at(token: &mut Jedi) {
+    token.set_created_at(::time::get_time());
+}
+
+fn updated_at(token: &mut Jedi) {
+    token.set_updated_at(::time::get_time());
+}
+
 fn setup_tables(cn: &Connection) {
    cn.batch_execute(r#"
         DROP TABLE IF EXISTS jedi CASCADE;
         CREATE TABLE jedi (
             id          serial PRIMARY KEY,
             name        varchar(40) NOT NULL,
-            force_level integer,
-            light_side  boolean,
-            created_at  timestamptz DEFAULT CURRENT_TIMESTAMP,
-            updated_at  timestamptz DEFAULT CURRENT_TIMESTAMP 
+            force_level integer NOT NULL,
+            side        SMALLINT NOT NULL,
+            created_at  timestamptz DEFAULT CURRENT_TIMESTAMP NOT NULL,
+            updated_at  timestamptz DEFAULT CURRENT_TIMESTAMP NOT NULL 
         );
 
-        INSERT INTO jedi (name, force_level, light_side) VALUES
-            ('Luke Skywalker', 100, true),
-            ('Mace Windu', 90, true),
-            ('Obi-Wan Kenoby', 99, true),
-            ('Kit Fisto', 70, true),
-            ('Count Dooku', 99, false),
-            ('Darth Maul', 70, false),
-            ('Anakin Skywalker', 100, false);
+        INSERT INTO jedi (name, force_level, side) VALUES
+            ('Luke Skywalker', 100, 1),
+            ('Mace Windu', 90, 1),
+            ('Obi-Wan Kenoby', 99, 1),
+            ('Kit Fisto', 70, 1),
+            ('Count Dooku', 99, 0),
+            ('Darth Maul', 70, 0),
+            ('Anakin Skywalker', 100, 0);
 
     "#).unwrap();
 }
@@ -84,28 +103,76 @@ fn setup_pg() -> adapter::postgres::PostgresPool {
 }
 
 #[test]
-fn test_it() {
+fn select() {
     let pool = setup_pg();
     let cn = pool.get().unwrap();
 
     setup_tables(&*cn);
 
-    Jedi::ordered().where_(Jedi::name_f().is("Luke Skywalker".to_string())).query_list(&*cn, &[]);
-    Jedi::ordered().where_(Jedi::name_f().is("Anakin Skywalker".to_string())).first().query(&*cn, &[]).unwrap();
+    assert_eq!((query_models!(
+        &Jedi::ordered().where_(Jedi::side_f().is(LightSide)), 
+        &*cn, []
+    )).len(), 4);
+
+    let anakin = (query_model!(
+        &Jedi::ordered().where_(Jedi::name_f().is("Anakin Skywalker".to_string())).first(), 
+        &*cn, &[]
+    )).unwrap();
+
+    assert_eq!(anakin.get_force_level(), &100)
+    assert_eq!(anakin.get_side(), &DarkSide);
 }
 
-const BENCH_SIZE: uint = 1000;
-
-#[bench]
-fn bench_list_query(b: &mut Bencher) {
+#[test]
+fn insert() {
     let pool = setup_pg();
     let cn = pool.get().unwrap();
-
     setup_tables(&*cn);
 
-    b.iter(|| {
-        for _ in range(0, BENCH_SIZE) {
-            Jedi::ordered().where_(Jedi::name_f().is("Luke Skywalker".to_string())).query_list(&*cn, &[]);
-        }
-    })
+    let mut jedi = Jedi::empty();
+    jedi.set_name("Pants Olmos".to_string());
+    jedi.set_force_level(10);
+    jedi.set_side(DarkSide);
+
+    assert_eq!(exec_pg!(&jedi.create(), &*cn, []), 1);
+
+    let olmos = (query_model!(
+        &Jedi::table().select_all().where_(Jedi::name_f().is("Pants Olmos".to_string())).first(), 
+        &*cn, &[]
+    )).unwrap();
+
+    assert_eq!(olmos.get_name(), &"Pants Olmos".to_string());
+    assert_eq!(olmos.get_force_level(), &10);
+    assert_eq!(olmos.get_side(), &DarkSide);
+}
+
+#[test]
+fn update() {
+    let pool = setup_pg();
+    let cn = pool.get().unwrap();
+    setup_tables(&*cn);
+
+    let mut anakin = (query_model!(
+        &Jedi::table().select_all().where_(Jedi::name_f().is("Anakin Skywalker".to_string())).first(), 
+        &*cn, &[]
+    )).unwrap();
+
+    assert_eq!(anakin.get_side(), &DarkSide);
+
+    anakin.set_side(LightSide);
+    assert_eq!(exec_pg!(&anakin.update(), &*cn, []), 1);
+}
+
+#[test]
+fn delete() {
+    let pool = setup_pg();
+    let cn = pool.get().unwrap();
+    setup_tables(&*cn);
+
+    let mut anakin = (query_model!(
+        &Jedi::table().select_all().where_(Jedi::name_f().is("Anakin Skywalker".to_string())).first(), 
+        &*cn, &[]
+    )).unwrap();
+
+    assert_eq!(exec_pg!(&anakin.delete(), &*cn, []), 1);
 }

@@ -30,3 +30,6 @@ git = "https://github.com/sfackler/r2d2-postgres.git"
 
 [dependencies.deuterium_plugin]
 path = "./plugin" 
+
+[dependencies.time]
+git = "https://github.com/rust-lang/time"
