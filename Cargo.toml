@@ -13,12 +13,11 @@ path = "src/lib.rs"
 default = ["pg"]
 pg = ["postgres", "r2d2_postgres"]
 
-[dependencies.deuterium]
-# git = "https://github.com/deuterium-orm/deuterium.git"
-path = "../deuterium"
-
 [[test]]
 name = "tests"
+
+[dependencies.deuterium]
+git = "https://github.com/deuterium-orm/deuterium.git"
 
 [dependencies.postgres]
 optional = true
