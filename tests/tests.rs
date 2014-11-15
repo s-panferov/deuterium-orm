@@ -134,7 +134,7 @@ fn insert() {
     jedi.set_force_level(10);
     jedi.set_side(DarkSide);
 
-    assert_eq!(exec_pg!(&jedi.create(), &*cn, []), 1);
+    assert_eq!(exec_pg!(&jedi.create_query(), &*cn, []), 1);
 
     let olmos = (query_model!(
         &Jedi::table().select_all().where_(Jedi::name_f().is("Pants Olmos".to_string())).first(), 
@@ -160,7 +160,7 @@ fn update() {
     assert_eq!(anakin.get_side(), &DarkSide);
 
     anakin.set_side(LightSide);
-    assert_eq!(exec_pg!(&anakin.update(), &*cn, []), 1);
+    assert_eq!(exec_pg!(&anakin.update_query(), &*cn, []), 1);
 }
 
 #[test]
@@ -174,5 +174,5 @@ fn delete() {
         &*cn, &[]
     )).unwrap();
 
-    assert_eq!(exec_pg!(&anakin.delete(), &*cn, []), 1);
+    assert_eq!(exec_pg!(&anakin.delete_query(), &*cn, []), 1);
 }

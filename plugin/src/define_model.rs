@@ -195,7 +195,7 @@ macro_rules! define_model {
                 unimplemented!() 
             }
 
-            pub fn create(&mut self) -> ::deuterium::InsertQuery<(), (), $model, (), ()> {
+            pub fn create_query(&mut self) -> ::deuterium::InsertQuery<(), (), $model, (), ()> {
                 let query = {
                     let mut fields: Vec<&::deuterium::Field> = vec![];
                     let mut values: Vec<&::deuterium::ToExpression<()>> = vec![];
@@ -226,7 +226,7 @@ macro_rules! define_model {
                 query
             }
 
-            pub fn update(&mut self) -> ::deuterium::UpdateQuery<(), ::deuterium::NoResult, $model> {
+            pub fn update_query(&mut self) -> ::deuterium::UpdateQuery<(), ::deuterium::NoResult, $model> {
 
                 self.call_before_save_hooks();
 
@@ -243,7 +243,7 @@ macro_rules! define_model {
                 query.where_(self.lookup_predicate())
             }   
 
-            pub fn delete(&mut self) -> ::deuterium::DeleteQuery<(), ::deuterium::NoResult, $model> {
+            pub fn delete_query(&mut self) -> ::deuterium::DeleteQuery<(), ::deuterium::NoResult, $model> {
                 $model::table().delete().where_(self.lookup_predicate())
             }
 

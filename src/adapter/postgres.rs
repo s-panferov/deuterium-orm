@@ -1,6 +1,7 @@
 
 use postgres::{
     Rows, 
+    GenericConnection, 
     Connection, 
     Statement
 };
@@ -38,7 +39,7 @@ pub fn setup(cn_str: &str, pool_size: uint) -> PostgresPool {
 pub struct PostgresAdapter;
 
 impl PostgresAdapter {
-    pub fn prepare_query<'conn>(query: &QueryToSql, cn: &'conn Connection) -> (SqlContext, PostgresResult<Statement<'conn>>){
+    pub fn prepare_query<'conn>(query: &QueryToSql, cn: &'conn GenericConnection) -> (SqlContext, PostgresResult<Statement<'conn>>){
         let mut ctx = SqlContext::new(box ::deuterium::sql::adapter::PostgreSqlAdapter);
         let sql = query.to_final_sql(&mut ctx);
 
