@@ -30,4 +30,5 @@ version = "*"
 optional = true
 
 [dependencies.deuterium_plugin]
+version = "0.1.0"
 path = "./plugin" 

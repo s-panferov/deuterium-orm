@@ -1,7 +1,8 @@
 [package]
 
 name = "deuterium_plugin"
-version = "0.0.1"
+version = "0.1.0"
+description = "Internal compiler plugin for DeutreriumORM"
 authors = ["Stanislav Panferov <fnight.m@gmail.com>"]
 
 [lib]
