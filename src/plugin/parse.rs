@@ -3,7 +3,7 @@ use syntax::ext::base;
 use syntax::parse::parser::Parser;
 use syntax::attr::{AttrMetaMethods};
 
-use model::{ModelState, MigrationState};
+use plugin::model::{ModelState, MigrationState};
 
 pub trait Parse<Cfg> {
     fn parse(&mut Parser, Cfg) -> Self;

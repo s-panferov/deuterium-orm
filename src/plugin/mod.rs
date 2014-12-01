@@ -1,22 +1,9 @@
-#![license = "MIT"]
-#![feature(plugin_registrar, quote)]
-#![feature(tuple_indexing)]
-#![feature(macro_rules)]
-#![feature(concat_idents)]
-#![feature(phase)]
-
-extern crate rustc;
-extern crate syntax;
-
-#[phase(plugin)]
-extern crate regex_macros;
-extern crate regex;
-
 use rustc::plugin;
 use syntax::parse::token;
+use syntax;
 
-use model::model;
-use model::migration;
+use self::model::model;
+use self::model::migration;
 
 mod generate;
 mod define_model;

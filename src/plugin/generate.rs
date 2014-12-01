@@ -10,7 +10,7 @@ use syntax::ext::build::AstBuilder;
 
 use std::ascii::AsciiExt;
 
-use model::{ModelState, MigrationState};
+use plugin::model::{ModelState, MigrationState};
 
 pub trait Generate<Cfg> {
     fn generate<'a>(self, codemap::Span, &mut base::ExtCtxt, Cfg) -> Box<base::MacResult + 'a>;

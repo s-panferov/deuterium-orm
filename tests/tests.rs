@@ -3,9 +3,6 @@
 #![feature(macro_rules)]
 
 #[phase(plugin)]
-extern crate deuterium_plugin;
-
-#[phase(plugin)]
 extern crate deuterium_orm;
 extern crate deuterium_orm;
 extern crate time;

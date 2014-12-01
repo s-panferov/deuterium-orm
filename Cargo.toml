@@ -10,6 +10,7 @@ license = "MIT"
 [lib]
 name = "deuterium_orm"
 path = "src/lib.rs"
+plugin = true
 
 [features]
 default = ["pg"]
@@ -29,7 +30,3 @@ optional = true
 [dependencies.r2d2_postgres]
 version = "*"
 optional = true
-
-[dependencies.deuterium_plugin]
-version = "0.1.0"
-path = "./plugin" 
