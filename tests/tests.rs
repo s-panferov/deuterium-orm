@@ -16,6 +16,7 @@ extern crate r2d2;
 extern crate r2d2_postgres;
 extern crate test;
 
+use std::os;
 use deuterium::*;
 use deuterium_orm::*;
 use time::Timespec;
@@ -90,7 +91,13 @@ fn setup_tables(cn: &Connection) {
 }
 
 fn setup_pg() -> adapter::postgres::PostgresPool {
-    let manager = PostgresPoolManager::new("postgres://panferov@localhost/jedi", ::postgres::SslMode::None);
+
+    let connection_uri = match os::getenv("POSTGRES_CONNECTION") {
+        Some(val) => val,
+        None => "postgres://localhost/jedi".to_string()
+    };
+
+    let manager = PostgresPoolManager::new(connection_uri.as_slice(), ::postgres::SslMode::None);
     let config = r2d2::Config {
         pool_size: 5,
         test_on_check_out: true,
