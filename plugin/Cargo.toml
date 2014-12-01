@@ -4,6 +4,7 @@ name = "deuterium_plugin"
 version = "0.1.0"
 description = "Internal compiler plugin for DeutreriumORM"
 authors = ["Stanislav Panferov <fnight.m@gmail.com>"]
+license = "MIT"
 
 [lib]
 name = "deuterium_plugin"
