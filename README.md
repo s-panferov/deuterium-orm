@@ -77,3 +77,7 @@ fn main() {
     // Get Option<Jedi> from database
     Jedi::ordered().where_(Jedi::name_f().is("Anakin Skywalker")).first().query(&*cn).unwrap();
 }
+
+# Tests
+
+Please run tests with `RUST_TEST_TASKS=1 cargo test`

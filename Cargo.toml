@@ -16,19 +16,17 @@ pg = ["postgres", "r2d2_postgres"]
 [[test]]
 name = "tests"
 
-[dependencies.deuterium]
-git = "https://github.com/deuterium-orm/deuterium.git"
+[dependencies]
+deuterium = "*"
+time = "*"
 
 [dependencies.postgres]
+version = "*"
 optional = true
-git = "https://github.com/sfackler/rust-postgres.git"
 
 [dependencies.r2d2_postgres]
+version = "*"
 optional = true
-git = "https://github.com/sfackler/r2d2-postgres.git"
 
 [dependencies.deuterium_plugin]
 path = "./plugin" 
-
-[dependencies.time]
-git = "https://github.com/rust-lang/time"

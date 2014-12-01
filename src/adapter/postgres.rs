@@ -25,7 +25,7 @@ pub type PostgresPooledConnection<'a> = ::r2d2::PooledConnection<
 >;
 
 pub fn setup(cn_str: &str, pool_size: uint) -> PostgresPool {
-    let manager = ::r2d2_postgres::PostgresPoolManager::new(cn_str, ::postgres::NoSsl);
+    let manager = ::r2d2_postgres::PostgresPoolManager::new(cn_str, ::postgres::SslMode::None);
     let config = ::r2d2::Config {
         pool_size: pool_size,
         test_on_check_out: true,
@@ -178,7 +178,7 @@ macro_rules! try_pg(
     ($e:expr) => (
         match $e {
             Ok(ok) => ok,
-            Err(err) => return Err(::postgres::Error::PgStreamError(err))
+            Err(err) => return Err(::postgres::Error::IoError(err))
         }
     )
 )
@@ -194,7 +194,7 @@ macro_rules! deuterium_enum(
                         Ok(::std::num::FromPrimitive::from_u8(try_pg!(reader.read_u8())).unwrap()) 
                     },
                     &None => {
-                        Err(::postgres::Error::PgBadData)
+                        Err(::postgres::Error::BadData)
                     }
                 }
                 

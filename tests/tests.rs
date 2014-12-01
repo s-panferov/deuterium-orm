@@ -20,7 +20,6 @@ use deuterium::*;
 use deuterium_orm::*;
 use time::Timespec;
 
-use postgres::NoSsl;
 use postgres::Connection;
 use r2d2_postgres::PostgresPoolManager;
 
@@ -91,7 +90,7 @@ fn setup_tables(cn: &Connection) {
 }
 
 fn setup_pg() -> adapter::postgres::PostgresPool {
-    let manager = PostgresPoolManager::new("postgres://panferov@localhost/jedi", NoSsl);
+    let manager = PostgresPoolManager::new("postgres://panferov@localhost/jedi", ::postgres::SslMode::None);
     let config = r2d2::Config {
         pool_size: 5,
         test_on_check_out: true,
@@ -110,8 +109,8 @@ fn select() {
     setup_tables(&*cn);
 
     assert_eq!((query_models!(
-        &Jedi::ordered().where_(Jedi::side_f().is(LightSide)), 
-        &*cn, []
+        &Jedi::ordered().where_(Jedi::side_f().is(Side::LightSide)), 
+        &*cn, &[]
     )).len(), 4);
 
     let anakin = (query_model!(
@@ -120,7 +119,7 @@ fn select() {
     )).unwrap();
 
     assert_eq!(anakin.get_force_level(), &100)
-    assert_eq!(anakin.get_side(), &DarkSide);
+    assert_eq!(anakin.get_side(), &Side::DarkSide);
 }
 
 #[test]
@@ -132,9 +131,9 @@ fn insert() {
     let mut jedi = Jedi::empty();
     jedi.set_name("Pants Olmos".to_string());
     jedi.set_force_level(10);
-    jedi.set_side(DarkSide);
+    jedi.set_side(Side::DarkSide);
 
-    assert_eq!(exec_pg!(&jedi.create_query(), &*cn, []), 1);
+    assert_eq!(exec_pg!(&jedi.create_query(), &*cn, &[]), 1);
 
     let olmos = (query_model!(
         &Jedi::table().select_all().where_(Jedi::name_f().is("Pants Olmos".to_string())).first(), 
@@ -143,7 +142,7 @@ fn insert() {
 
     assert_eq!(olmos.get_name(), &"Pants Olmos".to_string());
     assert_eq!(olmos.get_force_level(), &10);
-    assert_eq!(olmos.get_side(), &DarkSide);
+    assert_eq!(olmos.get_side(), &Side::DarkSide);
 }
 
 #[test]
@@ -157,10 +156,10 @@ fn update() {
         &*cn, &[]
     )).unwrap();
 
-    assert_eq!(anakin.get_side(), &DarkSide);
+    assert_eq!(anakin.get_side(), &Side::DarkSide);
 
-    anakin.set_side(LightSide);
-    assert_eq!(exec_pg!(&anakin.update_query(), &*cn, []), 1);
+    anakin.set_side(Side::LightSide);
+    assert_eq!(exec_pg!(&anakin.update_query(), &*cn, &[]), 1);
 }
 
 #[test]
@@ -174,5 +173,5 @@ fn delete() {
         &*cn, &[]
     )).unwrap();
 
-    assert_eq!(exec_pg!(&anakin.delete_query(), &*cn, []), 1);
+    assert_eq!(exec_pg!(&anakin.delete_query(), &*cn, &[]), 1);
 }

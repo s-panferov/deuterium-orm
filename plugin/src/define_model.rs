@@ -110,7 +110,7 @@ macro_rules! define_model {
         impl ::deuterium_orm::adapter::postgres::FromRow for $model {
             fn from_row<T, L>(query: &::deuterium::SelectQuery<T, L, $model>, row: &::postgres::Row) -> $model {
                 match &query.select {
-                    &::deuterium::SelectAll => {
+                    &::deuterium::Select::All => {
                         $model {
                            $(
                                 $field_name: Some(row.get(stringify!($field_name))),
@@ -118,7 +118,7 @@ macro_rules! define_model {
                            __meta: $model_meta::new()
                         }
                     },
-                    &::deuterium::SelectOnly(_) => {
+                    &::deuterium::Select::Only(_) => {
                         let mut model = $model::empty();
                         $(
                             model.$field_name = match row.get_opt(stringify!($field_name)) {
