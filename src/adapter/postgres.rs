@@ -49,7 +49,7 @@ impl PostgresAdapter {
     pub fn prepare_params<'a>(
             ext_params: &[&'a ToSql], 
             ctx_params: &'a[Box<AsPostgresValue + Send + Sync>]
-        ) -> Vec<&'a ToSql + 'a> {
+        ) -> Vec<&'a (ToSql + 'a)> {
 
         let mut final_params = vec![];
 
