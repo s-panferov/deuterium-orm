@@ -251,7 +251,7 @@ macro_rules! define_model {
 
         impl ::deuterium::Table for $table {
             fn upcast_table(&self) -> ::deuterium::RcTable {
-                ::std::sync::Arc::new(box self.clone() as ::deuterium::BoxedTable)
+                ::std::rc::Rc::new(box self.clone() as ::deuterium::BoxedTable)
             }
 
             fn get_table_name(&self) -> &String {
@@ -278,7 +278,7 @@ macro_rules! define_model {
             }
 
             fn upcast_from(&self) -> ::deuterium::RcFrom {
-                ::std::sync::Arc::new(box self.clone() as ::deuterium::BoxedFrom)
+                ::std::rc::Rc::new(box self.clone() as ::deuterium::BoxedFrom)
             }
         }
 

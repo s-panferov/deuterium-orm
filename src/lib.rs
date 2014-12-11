@@ -1,5 +1,4 @@
 #![feature(plugin_registrar, quote)]
-#![feature(tuple_indexing)]
 #![feature(macro_rules)]
 #![feature(concat_idents)]
 #![feature(globs)]

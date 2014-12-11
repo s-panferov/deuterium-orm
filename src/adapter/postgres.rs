@@ -48,7 +48,7 @@ impl PostgresAdapter {
 
     pub fn prepare_params<'a>(
             ext_params: &[&'a ToSql], 
-            ctx_params: &'a[Box<AsPostgresValue + Send + Sync>]
+            ctx_params: &'a[Box<AsPostgresValue + 'static>]
         ) -> Vec<&'a (ToSql + 'a)> {
 
         let mut final_params = vec![];
@@ -64,11 +64,11 @@ impl PostgresAdapter {
         final_params
     }
 
-    pub fn query<'conn, 'a>(stm: &'conn Statement<'conn>, params: &[&'a ToSql], ctx_params: &'a[Box<AsPostgresValue + Send + Sync>]) -> PostgresResult<Rows<'conn>> {
+    pub fn query<'conn, 'a>(stm: &'conn Statement<'conn>, params: &[&'a ToSql], ctx_params: &'a[Box<AsPostgresValue + 'static>]) -> PostgresResult<Rows<'conn>> {
         stm.query(PostgresAdapter::prepare_params(params, ctx_params).as_slice())
     }
 
-    pub fn execute<'conn, 'a>(stm: &'conn Statement<'conn>, params: &[&'a ToSql], ctx_params: &'a[Box<AsPostgresValue + Send + Sync>]) -> PostgresResult<uint> {
+    pub fn execute<'conn, 'a>(stm: &'conn Statement<'conn>, params: &[&'a ToSql], ctx_params: &'a[Box<AsPostgresValue + 'static>]) -> PostgresResult<uint> {
         stm.execute(PostgresAdapter::prepare_params(params, ctx_params).as_slice())
     }
 }
@@ -215,7 +215,7 @@ macro_rules! deuterium_enum(
 
             fn upcast_expression(&self) -> RcExpression {
                 let i = self.clone() as i16;
-                ::std::sync::Arc::new(box i as ::deuterium::BoxedExpression)
+                ::std::rc::Rc::new(box i as ::deuterium::BoxedExpression)
             }
         }
 
