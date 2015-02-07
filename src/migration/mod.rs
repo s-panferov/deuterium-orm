@@ -1,7 +1,9 @@
 use time::now_utc;
-use std::io::{File, Open, ReadWrite};
-use postgres::Connection;
-use std::collections::hash_map::HashMap;
+use std::old_io;
+use postgres;
+use std::collections;
+
+use std::num::ToPrimitive;
 
 pub fn gen_timecode() -> String {
     now_utc().strftime("%y%m%d%H%M%S").unwrap().to_string()
@@ -15,12 +17,12 @@ pub fn create_migration_file(name: &str, base_path: Path) -> String {
     let full_name = gen_full_name(name);
     let final_path = base_path.join(format!("{}.rs", full_name));
 
-    let mut file = match File::open_mode(&final_path, Open, ReadWrite) {
+    let mut file = match old_io::File::open_mode(&final_path, old_io::Open, old_io::ReadWrite) {
         Ok(f) => f,
         Err(e) => panic!("file error: {}", e),
     };
 
-    file.write(b"").unwrap();
+    file.write_all(b"").unwrap();
     full_name
 }
 
@@ -49,27 +51,27 @@ pub trait RawMigration<Conn> {
     fn down(&self, cn: &Conn);
 }
 
-pub type Migrations = Vec<Box<Migration<Connection>>>;
-pub type MigrationRefs<'a> = Vec<&'a Box<Migration<Connection>>>;
+pub type Migrations = Vec<Box<Migration<postgres::Connection>>>;
+pub type MigrationRefs<'a> = Vec<&'a Box<Migration<postgres::Connection>>>;
 
-pub fn ensure_schema_migrations(cn: &Connection) {
+pub fn ensure_schema_migrations(cn: &postgres::Connection) {
     cn.execute("CREATE TABLE IF NOT EXISTS schema_migrations (
          version BIGINT NOT NULL
     );", &[]).unwrap();
 }
 
-pub fn insert_version(version: &i64, cn: &Connection) {
+pub fn insert_version(version: &i64, cn: &postgres::Connection) {
     cn.execute("INSERT INTO schema_migrations VALUES ($1);", &[version]).unwrap();
 }
 
-pub fn delete_version(version: &i64, cn: &Connection) {
+pub fn delete_version(version: &i64, cn: &postgres::Connection) {
     cn.execute("DELETE FROM schema_migrations WHERE version = $1;", &[version]).unwrap();
 }
 
-pub fn get_versions_as_hash(cn: &Connection) -> HashMap<i64, bool> {
+pub fn get_versions_as_hash(cn: &postgres::Connection) -> collections::HashMap<i64, bool> {
     let stmt = cn.prepare("SELECT version FROM schema_migrations ORDER BY version desc;").unwrap();
-    let mut rows = stmt.query(&[]).unwrap();
-    let mut db_versions: HashMap<i64, bool> = HashMap::new();
+    let rows = stmt.query(&[]).unwrap();
+    let mut db_versions: collections::HashMap<i64, bool> = collections::HashMap::new();
 
     for row in rows {
         db_versions.insert(row.get(0), true);
@@ -78,9 +80,9 @@ pub fn get_versions_as_hash(cn: &Connection) -> HashMap<i64, bool> {
     db_versions
 }
 
-pub fn get_versions_as_vec(cn: &Connection) -> Vec<i64> {
+pub fn get_versions_as_vec(cn: &postgres::Connection) -> Vec<i64> {
     let stmt = cn.prepare("SELECT version FROM schema_migrations ORDER BY version desc;").unwrap();
-    let mut rows = stmt.query(&[]).unwrap();
+    let rows = stmt.query(&[]).unwrap();
     let mut db_versions: Vec<i64> = vec![];
 
     for row in rows {
@@ -90,7 +92,7 @@ pub fn get_versions_as_vec(cn: &Connection) -> Vec<i64> {
     db_versions
 }
 
-pub fn run(migrations: &Migrations, cn: &Connection) {
+pub fn run(migrations: &Migrations, cn: &postgres::Connection) {
     ensure_schema_migrations(cn);
     let db_versions = get_versions_as_hash(cn);
 
@@ -107,10 +109,10 @@ pub fn run(migrations: &Migrations, cn: &Connection) {
     }
 }
 
-pub fn rollback(steps: uint, migrations: &Migrations, cn: &Connection) {
+pub fn rollback(steps: usize, migrations: &Migrations, cn: &postgres::Connection) {
     ensure_schema_migrations(cn);
     let db_versions = get_versions_as_vec(cn);
-    let db_versions_to_run = db_versions.slice(0, steps);
+    let db_versions_to_run = &db_versions[0..steps];
 
     let migrations_to_run: MigrationRefs = migrations.iter().filter(|m| {
         let version = m.version().to_i64().unwrap();

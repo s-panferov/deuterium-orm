@@ -91,7 +91,7 @@ impl<'a, 'b> Parse<(codemap::Span, &'a mut base::ExtCtxt<'b>)> for MigrationStat
         };
 
         MigrationState{
-            path: ::std::os::make_absolute(&Path::new(path)).unwrap()
+            path: ::std::env::current_dir().map(|dir| dir.join(&Path::new(path))).unwrap()
         }
     }
 }

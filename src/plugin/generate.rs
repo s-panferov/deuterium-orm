@@ -20,7 +20,7 @@ impl Generate<()> for ModelState {
     fn generate<'a>(self, sp: codemap::Span, cx: &mut base::ExtCtxt, _: ()) -> Box<base::MacResult + 'a> {
         let name = self.mod_name.clone();
         let struct_name = self.model.ident.clone().name.as_str().to_string();
-        let ts_name = struct_name + "Table".to_string();
+        let ts_name = struct_name.clone() + "Table";
         
         let model_struct_def = match &self.model.node {
             &ast::ItemStruct(ref model_struct_def, _) => model_struct_def.clone(),
@@ -57,15 +57,15 @@ impl Generate<()> for ModelState {
         }
 
         let ty_def_macro_body = format!("{}, {}, {}, {}, {}, \"{}\", {}, {}, {}",
-            struct_name,
-            struct_name + "Meta",
-            ts_name,
-            ts_name + "ManySelectQueryExt",
-            ts_name + "OneSelectQueryExt",
+            struct_name.clone(),
+            struct_name.clone() + "Meta",
+            ts_name.clone(),
+            ts_name.clone() + "ManySelectQueryExt",
+            ts_name.clone() + "OneSelectQueryExt",
             name.name.as_str(),
-            ts_fields.to_string(),
-            self.before_create.to_string(),
-            self.before_save.to_string()
+            format!("{:?}", ts_fields),
+            format!("{:?}", self.before_create),
+            format!("{:?}", self.before_save)
         );
 
         let mut impls = vec![];
@@ -105,7 +105,7 @@ fn generate_lookup_predicate(struct_name: &String, primary_key: &Vec<String>) ->
 impl Generate<()> for MigrationState {
     fn generate<'a>(self, sp: codemap::Span, cx: &mut base::ExtCtxt, _: ()) -> Box<base::MacResult + 'a> {
 
-        let pathes = ::std::io::fs::readdir(&self.path).unwrap();
+        let pathes = ::std::old_io::fs::readdir(&self.path).unwrap();
         let mut migrations = vec![];
 
         let path_checker = regex!(r"^_(\d{12})");
@@ -117,16 +117,16 @@ impl Generate<()> for MigrationState {
 
             if captures.is_none() { continue };
 
-            let captures = captures.unwrap();
-            let tm = captures.at(1);
-            let version: u64 = from_str(tm).unwrap();
-            let name = filestem.replace(captures.at(0), "");
+            let captures = captures.expect("Mailformed migration name");
+            let tm = captures.at(1).expect("Timestamp must exists");
+            let version: u64 = tm.parse().ok().expect("Timestamp must be valid u64");
+            let name = filestem.replace(captures.at(0).unwrap(), "");
 
             let name = upcaser.replace_all(name.as_slice(), |caps: &::regex::Captures| {
-                caps.at(1).to_ascii_upper()
+                caps.at(1).unwrap().to_ascii_uppercase()
             });
 
-            migrations.push((filestem.to_string(), version, name.to_string()).to_string());
+            migrations.push(format!("{:?}", (filestem.to_string(), version, name.to_string())));
         }
 
         let macro_body = migrations.connect(", ");
@@ -153,7 +153,8 @@ fn generate_macro_invocation(cx: &mut base::ExtCtxt, macro_name: &str, macro_bod
                         parameters: ast::AngleBracketedParameters(
                             ast::AngleBracketedParameterData {
                                 lifetimes: vec![],
-                                types: OwnedSlice::empty()  
+                                types: OwnedSlice::empty(),
+                                bindings: OwnedSlice::empty()
                             }
                         )
                     }]

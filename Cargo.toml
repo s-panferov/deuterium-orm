@@ -14,16 +14,22 @@ plugin = true
 
 [features]
 default = ["pg"]
-pg = ["postgres", "r2d2_postgres"]
+pg = ["postgres", "r2d2_postgres", "r2d2"]
 
 [[test]]
 name = "tests"
 
 [dependencies]
+regex = "*"
+regex_macros = "*"
 deuterium = "*"
 time = "*"
 
 [dependencies.postgres]
+version = "*"
+optional = true
+
+[dependencies.r2d2]
 version = "*"
 optional = true
 

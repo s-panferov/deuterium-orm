@@ -2,7 +2,6 @@
 use postgres::{
     Rows, 
     GenericConnection, 
-    Connection, 
     Statement
 };
 
@@ -10,37 +9,30 @@ use postgres::Result as PostgresResult;
 use postgres::types::ToSql;
 use deuterium::{SqlContext, AsPostgresValue, QueryToSql};
 
-pub type PostgresPool = ::r2d2::Pool<
-    Connection,
-    ::r2d2_postgres::Error,
-    ::r2d2_postgres::PostgresPoolManager,
-    ::r2d2::NoopErrorHandler>;
-
+pub type PostgresPool = ::r2d2::Pool<::r2d2_postgres::PostgresConnectionManager>;
 pub type PostgresPooledConnection<'a> = ::r2d2::PooledConnection<
     'a, 
-    ::postgres::Connection, 
-    ::r2d2_postgres::Error, 
-    ::r2d2_postgres::PostgresPoolManager, 
-    ::r2d2::NoopErrorHandler
+    ::r2d2_postgres::PostgresConnectionManager, 
 >;
 
-pub fn setup(cn_str: &str, pool_size: uint) -> PostgresPool {
-    let manager = ::r2d2_postgres::PostgresPoolManager::new(cn_str, ::postgres::SslMode::None);
+pub fn setup(cn_str: &str, pool_size: u32) -> PostgresPool {
+    let manager = ::r2d2_postgres::PostgresConnectionManager::new(cn_str, ::postgres::SslMode::None);
     let config = ::r2d2::Config {
         pool_size: pool_size,
         test_on_check_out: true,
         ..::std::default::Default::default()
     };
 
-    let handler = ::r2d2::NoopErrorHandler;
+    let handler = Box::new(::r2d2::NoopErrorHandler);
     ::r2d2::Pool::new(config, manager, handler).unwrap()
 }
 
+#[allow(missing_copy_implementations)]
 pub struct PostgresAdapter;
 
 impl PostgresAdapter {
     pub fn prepare_query<'conn>(query: &QueryToSql, cn: &'conn GenericConnection) -> (SqlContext, PostgresResult<Statement<'conn>>){
-        let mut ctx = SqlContext::new(box ::deuterium::sql::adapter::PostgreSqlAdapter);
+        let mut ctx = SqlContext::new(Box::new(::deuterium::sql::adapter::PostgreSqlAdapter));
         let sql = query.to_final_sql(&mut ctx);
 
         (ctx, cn.prepare(sql.as_slice()))
@@ -68,7 +60,7 @@ impl PostgresAdapter {
         stm.query(PostgresAdapter::prepare_params(params, ctx_params).as_slice())
     }
 
-    pub fn execute<'conn, 'a>(stm: &'conn Statement<'conn>, params: &[&'a ToSql], ctx_params: &'a[Box<AsPostgresValue + 'static>]) -> PostgresResult<uint> {
+    pub fn execute<'conn, 'a>(stm: &'conn Statement<'conn>, params: &[&'a ToSql], ctx_params: &'a[Box<AsPostgresValue + 'static>]) -> PostgresResult<u64> {
         stm.execute(PostgresAdapter::prepare_params(params, ctx_params).as_slice())
     }
 }
@@ -82,20 +74,15 @@ pub fn from_row<T, L, M: FromRow>(query: &::deuterium::SelectQuery<T, L, M>, row
 }
 
 #[macro_export]
-macro_rules! unwrap_or_report_sql_error(
-    () => ()
-)
-
-#[macro_export]
-macro_rules! to_sql_string_pg(
+macro_rules! to_sql_string_pg {
     ($query:expr) => ({
         let mut ctx = ::deuterium::SqlContext::new(box ::deuterium::sql::adapter::PostgreSqlAdapter);
         $query.to_final_sql(&mut ctx)
     })
-)
+}
 
 #[macro_export]
-macro_rules! query_pg(
+macro_rules! query_pg {
     ($query:expr, $cn:expr, $params:expr, $rows:ident, $blk:block) => ({
         let (ctx, maybe_stm) = ::deuterium_orm::adapter::postgres::PostgresAdapter::prepare_query($query, $cn);
         let stm = match maybe_stm {
@@ -116,10 +103,10 @@ macro_rules! query_pg(
         
         $blk
     });
-)
+}
 
 #[macro_export]
-macro_rules! query_models_iter(
+macro_rules! query_models_iter {
     ($query:expr, $cn:expr, $params:expr) => (
         query_pg!($query, $cn, $params, rows, {
             rows.map(|row| {
@@ -127,10 +114,10 @@ macro_rules! query_models_iter(
             })
         })
     )
-)
+}
 
 #[macro_export]
-macro_rules! query_models(
+macro_rules! query_models {
     ($query:expr, $cn:expr, $params:expr) => (
         query_pg!($query, $cn, $params, rows, {
             let vec: Vec<_> = rows.map(|row| {
@@ -139,10 +126,10 @@ macro_rules! query_models(
             vec
         })
     )
-)
+}
 
 #[macro_export]
-macro_rules! query_model(
+macro_rules! query_model {
     ($query:expr, $cn:expr, $params:expr) => (
         query_pg!($query, $cn, $params, rows, {
             rows.take(1).next().map(|row| {
@@ -150,19 +137,19 @@ macro_rules! query_model(
             })
         })
     )
-)
+}
 
 #[macro_export]
-macro_rules! exec_pg_safe(
+macro_rules! exec_pg_safe {
     ($query:expr, $cn:expr, $params:expr) => ({
         let (ctx, maybe_stm) = ::deuterium_orm::adapter::postgres::PostgresAdapter::prepare_query($query, $cn);
         let stm = maybe_stm.unwrap();
         ::deuterium_orm::adapter::postgres::PostgresAdapter::execute(&stm, $params, ctx.data())
     })
-)
+}
 
 #[macro_export]
-macro_rules! exec_pg(
+macro_rules! exec_pg {
     ($query:expr, $cn:expr, $params:expr) => ({
         match exec_pg_safe!($query, $cn, $params) {
             Ok(res) => res,
@@ -171,20 +158,20 @@ macro_rules! exec_pg(
             )
         }
     })
-)
+}
 
 #[macro_export]
-macro_rules! try_pg(
+macro_rules! try_pg {
     ($e:expr) => (
         match $e {
             Ok(ok) => ok,
             Err(err) => return Err(::postgres::Error::IoError(err))
         }
     )
-)
+}
 
 #[macro_export]
-macro_rules! deuterium_enum(
+macro_rules! deuterium_enum {
     ($en:ty) => (
         impl ::postgres::types::FromSql for $en {
             fn from_sql(_ty: &::postgres::types::Type, raw: &Option<Vec<u8>>) -> ::postgres::Result<$en> {
@@ -230,4 +217,4 @@ macro_rules! deuterium_enum(
             }
         }
     )
-)
+}

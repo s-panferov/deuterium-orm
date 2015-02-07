@@ -5,7 +5,7 @@ use syntax::ext::base;
 use plugin::parse::Parse;
 use plugin::generate::Generate;
 
-#[deriving(Clone)]
+#[derive(Clone)]
 pub struct ModelState {
     pub mod_name: ast::Ident,
     pub model: P<ast::Item>,
@@ -23,7 +23,7 @@ pub fn model<'cx>(cx: &'cx mut base::ExtCtxt, sp: codemap::Span,
     state.generate(sp, cx, ())
 }
 
-#[deriving(Clone)]
+#[derive(Clone)]
 pub struct MigrationState {
     pub path: Path
 }

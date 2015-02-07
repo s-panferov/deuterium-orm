@@ -1,8 +1,12 @@
 #![feature(plugin_registrar, quote)]
-#![feature(macro_rules)]
 #![feature(concat_idents)]
-#![feature(globs)]
-#![feature(phase)]
+#![feature(plugin)]
+#![feature(rustc_private)]
+#![feature(core)]
+#![feature(path)]
+#![feature(std_misc)]
+#![feature(env)]
+#![feature(io)]
 
 #[cfg(feature = "postgres")]
 extern crate postgres;
@@ -15,7 +19,7 @@ extern crate time;
 extern crate rustc;
 extern crate syntax;
 
-#[phase(plugin)]
+#[plugin]
 extern crate regex_macros;
 extern crate regex;
 

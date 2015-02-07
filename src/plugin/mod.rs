@@ -14,14 +14,14 @@ mod parse;
 #[doc(hidden)]
 pub fn plugin_registrar(reg: &mut plugin::Registry) {
     reg.register_syntax_extension(token::intern("deuterium_model"), 
-        syntax::ext::base::IdentTT(box model, None));
+        syntax::ext::base::IdentTT(Box::new(model), None));
 
     reg.register_syntax_extension(token::intern("load_migrations"), 
-        syntax::ext::base::NormalTT(box migration, None));
+        syntax::ext::base::NormalTT(Box::new(migration), None));
 }
 
 #[macro_export]
-macro_rules! create_model(
+macro_rules! create_model {
     ($model:ident, $($field_name:ident: $field_value:expr),+) => (
         $model {
             $(
@@ -31,4 +31,4 @@ macro_rules! create_model(
             ..std::default::Default::default()
         }
     )
-)
+}

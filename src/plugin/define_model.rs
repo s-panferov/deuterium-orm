@@ -34,7 +34,7 @@ macro_rules! define_model {
 
         // Generate Meta struct to hold dirty flags and other helpful internal state.
 
-        #[deriving(Default, Show, Clone)]
+        #[derive(Default, Show, Clone)]
         #[allow(dead_code)]
         pub struct $model_meta {
             $(
@@ -59,7 +59,7 @@ macro_rules! define_model {
         // where None case we need to tell that field was not loaded from database.
         // New struct also will include __meta field where internal model state is stored.
 
-        #[deriving(Default, Show, Clone)]
+        #[derive(Default, Show, Clone)]
         #[allow(dead_code)]
         pub struct $model {
             $(
@@ -135,7 +135,7 @@ macro_rules! define_model {
 
         // We also generate ModelTable struct to deal with requests. 
 
-        #[deriving(Clone)]
+        #[derive(Clone)]
         pub struct $table(::deuterium::TableDef);
 
         #[allow(dead_code)]
@@ -293,7 +293,7 @@ macro_rules! define_model {
 }
 
 #[macro_export]
-macro_rules! primary_key(
+macro_rules! primary_key {
     ($s:ident, $model:ident, $body:block) => (
         impl $model {
             #[allow(dead_code)]
@@ -304,4 +304,4 @@ macro_rules! primary_key(
         // TODO get_primary()
         // TODO get_primary_f()
     )
-)
+}
