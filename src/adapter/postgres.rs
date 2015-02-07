@@ -7,7 +7,7 @@ use postgres::{
 
 use postgres::Result as PostgresResult;
 use postgres::types::ToSql;
-use deuterium::{SqlContext, AsPostgresValue, QueryToSql};
+use deuterium::{SqlContext, QueryToSql};
 
 pub type PostgresPool = ::r2d2::Pool<::r2d2_postgres::PostgresConnectionManager>;
 pub type PostgresPooledConnection<'a> = ::r2d2::PooledConnection<
@@ -40,7 +40,7 @@ impl PostgresAdapter {
 
     pub fn prepare_params<'a>(
             ext_params: &[&'a ToSql], 
-            ctx_params: &'a[Box<AsPostgresValue + 'static>]
+            ctx_params: &'a[Box<ToSql + 'static>]
         ) -> Vec<&'a (ToSql + 'a)> {
 
         let mut final_params = vec![];
@@ -50,17 +50,17 @@ impl PostgresAdapter {
         }
 
         for param in ctx_params.iter() {
-            final_params.push(param.as_postgres_value());
+            final_params.push(&**param);
         }
 
         final_params
     }
 
-    pub fn query<'conn, 'a>(stm: &'conn Statement<'conn>, params: &[&'a ToSql], ctx_params: &'a[Box<AsPostgresValue + 'static>]) -> PostgresResult<Rows<'conn>> {
+    pub fn query<'conn, 'a>(stm: &'conn Statement<'conn>, params: &[&'a ToSql], ctx_params: &'a[Box<ToSql + 'static>]) -> PostgresResult<Rows<'conn>> {
         stm.query(PostgresAdapter::prepare_params(params, ctx_params).as_slice())
     }
 
-    pub fn execute<'conn, 'a>(stm: &'conn Statement<'conn>, params: &[&'a ToSql], ctx_params: &'a[Box<AsPostgresValue + 'static>]) -> PostgresResult<u64> {
+    pub fn execute<'conn, 'a>(stm: &'conn Statement<'conn>, params: &[&'a ToSql], ctx_params: &'a[Box<ToSql + 'static>]) -> PostgresResult<u64> {
         stm.execute(PostgresAdapter::prepare_params(params, ctx_params).as_slice())
     }
 }
@@ -174,13 +174,13 @@ macro_rules! try_pg {
 macro_rules! deuterium_enum {
     ($en:ty) => (
         impl ::postgres::types::FromSql for $en {
-            fn from_sql(_ty: &::postgres::types::Type, raw: &Option<Vec<u8>>) -> ::postgres::Result<$en> {
+            fn from_sql(_ty: &::postgres::types::Type, raw: Option<&[u8]>) -> ::postgres::Result<$en> {
                 match raw {
-                    &Some(ref buf) => {
-                        let mut reader = ::std::io::BufReader::new(buf[]);
+                    Some(ref buf) => {
+                        let mut reader = ::std::old_io::BufReader::new(&buf[]);
                         Ok(::std::num::FromPrimitive::from_u8(try_pg!(reader.read_u8())).unwrap()) 
                     },
-                    &None => {
+                    None => {
                         Err(::postgres::Error::BadData)
                     }
                 }
@@ -200,7 +200,7 @@ macro_rules! deuterium_enum {
                 self
             }
 
-            fn upcast_expression(&self) -> RcExpression {
+            fn upcast_expression(&self) -> SharedExpression {
                 let i = self.clone() as i16;
                 ::std::rc::Rc::new(box i as ::deuterium::BoxedExpression)
             }
@@ -208,7 +208,7 @@ macro_rules! deuterium_enum {
 
         impl ::deuterium::ToExpression<$en> for $en {}
         impl ::deuterium::ToExpression<i16> for $en {}
-        impl ::deuterium::ToExpression<()> for $en {}
+        impl ::deuterium::ToExpression<RawExpression> for $en {}
 
         impl ::deuterium::ToPredicateValue for $en { 
             fn to_predicate_value(&self, ctx: &mut SqlContext) -> String { 

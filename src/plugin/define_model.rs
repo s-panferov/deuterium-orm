@@ -34,7 +34,7 @@ macro_rules! define_model {
 
         // Generate Meta struct to hold dirty flags and other helpful internal state.
 
-        #[derive(Default, Show, Clone)]
+        #[derive(Default, Debug, Clone)]
         #[allow(dead_code)]
         pub struct $model_meta {
             $(
@@ -59,7 +59,7 @@ macro_rules! define_model {
         // where None case we need to tell that field was not loaded from database.
         // New struct also will include __meta field where internal model state is stored.
 
-        #[derive(Default, Show, Clone)]
+        #[derive(Default, Debug, Clone)]
         #[allow(dead_code)]
         pub struct $model {
             $(
@@ -109,7 +109,7 @@ macro_rules! define_model {
         #[cfg(feature = "postgres")]
         impl ::deuterium_orm::adapter::postgres::FromRow for $model {
             fn from_row<T, L>(query: &::deuterium::SelectQuery<T, L, $model>, row: &::postgres::Row) -> $model {
-                match &query.select {
+                match query.get_select() {
                     &::deuterium::Select::All => {
                         $model {
                            $(
@@ -197,8 +197,8 @@ macro_rules! define_model {
 
             pub fn create_query(&mut self) -> ::deuterium::InsertQuery<(), (), $model, (), ()> {
                 let query = {
-                    let mut fields: Vec<&::deuterium::Field> = vec![];
-                    let mut values: Vec<&::deuterium::ToExpression<()>> = vec![];
+                    let mut fields: Vec<::deuterium::BoxedField> = vec![];
+                    let mut values: Vec<&::deuterium::Expression<::deuterium::RawExpression>> = vec![];
                     
                     self.call_before_create_hooks();         
                     self.call_before_save_hooks();
@@ -207,14 +207,14 @@ macro_rules! define_model {
                         let $field_name;
                         if self.__meta.$field_changed_flag == true {
                             $field_name = $model::$field_name_f();
-                            fields.push(&$field_name);
-                            values.push(self.$field_get());
+                            fields.push(Box::new($field_name));
+                            values.push(self.$field_get().as_expr());
                         }
                     )+  
 
-                    let mut query = $model::table().insert_fields(fields.as_slice());
+                    let mut query = $model::table().insert_fields(fields.iter().map(|f| &**f).collect::<Vec<&::deuterium::Field>>().as_slice());
                     query.push_untyped(values.as_slice());
-                    query 
+                    query
                 };
 
                 $(
@@ -250,7 +250,7 @@ macro_rules! define_model {
         }
 
         impl ::deuterium::Table for $table {
-            fn upcast_table(&self) -> ::deuterium::RcTable {
+            fn upcast_table(&self) -> ::deuterium::SharedTable {
                 ::std::rc::Rc::new(box self.clone() as ::deuterium::BoxedTable)
             }
 
@@ -277,7 +277,7 @@ macro_rules! define_model {
                 &self.0
             }
 
-            fn upcast_from(&self) -> ::deuterium::RcFrom {
+            fn upcast_from(&self) -> ::deuterium::SharedFrom {
                 ::std::rc::Rc::new(box self.clone() as ::deuterium::BoxedFrom)
             }
         }
@@ -297,7 +297,7 @@ macro_rules! primary_key {
     ($s:ident, $model:ident, $body:block) => (
         impl $model {
             #[allow(dead_code)]
-            pub fn lookup_predicate(&$s) -> ::deuterium::RcPredicate {
+            pub fn lookup_predicate(&$s) -> ::deuterium::SharedPredicate {
                 $body
             }
         }

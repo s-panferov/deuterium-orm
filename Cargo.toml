@@ -22,8 +22,10 @@ name = "tests"
 [dependencies]
 regex = "*"
 regex_macros = "*"
-deuterium = "*"
 time = "*"
+
+[dependencies.deuterium]
+version = "*"
 
 [dependencies.postgres]
 version = "*"

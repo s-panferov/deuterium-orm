@@ -1,10 +1,9 @@
-#![feature(phase)]
-#![feature(globs)]
-#![feature(macro_rules)]
+#![feature(plugin)]
+#![feature(env)]
+#![feature(core)]
+#![feature(test)]
 
-#[phase(plugin)]
-extern crate deuterium_orm;
-extern crate deuterium_orm;
+#[plugin] #[macro_use] extern crate deuterium_orm;
 extern crate time;
 extern crate deuterium;
 
@@ -13,27 +12,26 @@ extern crate r2d2;
 extern crate r2d2_postgres;
 extern crate test;
 
-use std::os;
+use std::env;
 use deuterium::*;
 use deuterium_orm::*;
 use time::Timespec;
 
 use postgres::Connection;
-use r2d2_postgres::PostgresPoolManager;
 
-macro_rules! assert_sql(
+macro_rules! assert_sql {
     ($query:expr, $s:expr) => (
         assert_eq!($query.to_final_sql().as_slice(), $s)
     )
-)
+}
 
-#[deriving(Clone, Show, PartialEq, FromPrimitive)]
+#[derive(Clone, Debug, PartialEq, FromPrimitive)]
 pub enum Side {
     DarkSide,
     LightSide,
 }
 
-deuterium_enum!(Side)
+deuterium_enum!(Side);
 
 deuterium_model! jedi {
     #[primary_key(id)]
@@ -89,19 +87,19 @@ fn setup_tables(cn: &Connection) {
 
 fn setup_pg() -> adapter::postgres::PostgresPool {
 
-    let connection_uri = match os::getenv("POSTGRES_CONNECTION") {
-        Some(val) => val,
-        None => "postgres://localhost/jedi".to_string()
+    let connection_uri = match env::var_string("POSTGRES_CONNECTION") {
+        Ok(val) => val,
+        Err(_) => "postgres://localhost/jedi".to_string()
     };
 
-    let manager = PostgresPoolManager::new(connection_uri.as_slice(), ::postgres::SslMode::None);
+    let manager = r2d2_postgres::PostgresConnectionManager::new(connection_uri.as_slice(), ::postgres::SslMode::None);
     let config = r2d2::Config {
         pool_size: 5,
         test_on_check_out: true,
         ..std::default::Default::default()
     };
 
-    let handler = r2d2::NoopErrorHandler;
+    let handler = Box::new(r2d2::NoopErrorHandler);
     r2d2::Pool::new(config, manager, handler).unwrap()
 }
 
@@ -122,7 +120,7 @@ fn select() {
         &*cn, &[]
     )).unwrap();
 
-    assert_eq!(anakin.get_force_level(), &100)
+    assert_eq!(anakin.get_force_level(), &100);
     assert_eq!(anakin.get_side(), &Side::DarkSide);
 }
 

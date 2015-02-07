@@ -52,7 +52,7 @@ impl Generate<()> for ModelState {
                 format!("set_{}", field_name),  
                 format!("__{}_changed", field_name),  
                 format!("{}_changed", field_name),  
-                visibility
+                visibility.to_string()
             ));
         }
 
@@ -63,9 +63,11 @@ impl Generate<()> for ModelState {
             ts_name.clone() + "ManySelectQueryExt",
             ts_name.clone() + "OneSelectQueryExt",
             name.name.as_str(),
-            format!("{:?}", ts_fields),
-            format!("{:?}", self.before_create),
-            format!("{:?}", self.before_save)
+            format!("[{}]", ts_fields.iter().map(|s| 
+                format!("({})", &[&s.0, &s.1, &s.2, &s.3, &s.4, &s.5, &s.6, &s.7].connect(", "))
+            ).collect::<Vec<String>>().connect(", ")),
+            format!("[{}]", self.before_create.connect(", ")),
+            format!("[{}]", self.before_save.connect(", "))
         );
 
         let mut impls = vec![];
