@@ -305,3 +305,16 @@ macro_rules! primary_key {
         // TODO get_primary_f()
     )
 }
+
+#[macro_export]
+macro_rules! create_model {
+    ($model:ident, $($field_name:ident: $field_value:expr),+) => (
+        $model {
+            $(
+                $field_name: Some($field_value),
+            )+
+
+            ..std::default::Default::default()
+        }
+    )
+}
