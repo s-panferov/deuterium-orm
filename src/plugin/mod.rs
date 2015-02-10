@@ -2,33 +2,28 @@ use rustc::plugin;
 use syntax::parse::token;
 use syntax;
 
-use self::model::model;
-use self::model::migration;
+use syntax::{codemap};
+use syntax::ext::base;
+use syntax::parse::parser;
 
-mod generate;
-mod define_model;
-mod model;
-mod parse;
+#[macro_use] mod helpers;
+#[macro_use] mod model;
+#[macro_use] mod migration;
 
 #[plugin_registrar]
 #[doc(hidden)]
 pub fn plugin_registrar(reg: &mut plugin::Registry) {
     reg.register_syntax_extension(token::intern("deuterium_model"), 
-        syntax::ext::base::IdentTT(Box::new(model), None));
+        syntax::ext::base::IdentTT(Box::new(model::model), None));
 
     reg.register_syntax_extension(token::intern("load_migrations"), 
-        syntax::ext::base::NormalTT(Box::new(migration), None));
+        syntax::ext::base::NormalTT(Box::new(migration::migration), None));
 }
 
-#[macro_export]
-macro_rules! create_model {
-    ($model:ident, $($field_name:ident: $field_value:expr),+) => (
-        $model {
-            $(
-                $field_name: Some($field_value),
-            )+
+pub trait Parser<Cfg> {
+    fn parse(&mut parser::Parser, Cfg) -> Self;
+}
 
-            ..std::default::Default::default()
-        }
-    )
+pub trait Generator<Cfg> {
+    fn generate<'a>(self, codemap::Span, &mut base::ExtCtxt, Cfg) -> Box<base::MacResult + 'a>;
 }

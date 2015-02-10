@@ -1,17 +1,11 @@
 use syntax::{ast, codemap};
 use syntax::ext::base;
-use syntax::parse::parser::Parser;
+use syntax::parse::parser;
 use syntax::attr::{AttrMetaMethods};
 
-use plugin::model::{ModelState, MigrationState};
-
-pub trait Parse<Cfg> {
-    fn parse(&mut Parser, Cfg) -> Self;
-}
-
-impl<'a, 'b> Parse<(codemap::Span, &'a mut base::ExtCtxt<'b>, Option<ast::Ident>)> for ModelState {
-    fn parse(parser: &mut Parser,
-             (_sp, _cx, name): (codemap::Span, &'a mut base::ExtCtxt, Option<ast::Ident>)) -> ModelState {
+impl<'a, 'b> super::super::Parser<(codemap::Span, &'a mut base::ExtCtxt<'b>, Option<ast::Ident>)> for super::ModelState {
+    fn parse(parser: &mut parser::Parser,
+             (_sp, _cx, name): (codemap::Span, &'a mut base::ExtCtxt, Option<ast::Ident>)) -> super::ModelState {
 
         let name = match name {
             Some(name) => name,
@@ -63,35 +57,12 @@ impl<'a, 'b> Parse<(codemap::Span, &'a mut base::ExtCtxt<'b>, Option<ast::Ident>
             }
         }
 
-        ModelState {
+        super::ModelState {
             mod_name: name,
             model: model_struct,
             primary_key: primary_key,
             before_create: before_create,
             before_save: before_save,
-        }
-    }
-}
-
-impl<'a, 'b> Parse<(codemap::Span, &'a mut base::ExtCtxt<'b>)> for MigrationState {
-    fn parse(parser: &mut Parser,
-             (_sp, _cx): (codemap::Span, &'a mut base::ExtCtxt)) -> MigrationState {
-        let item = parser.parse_expr();
-
-        let path = match &item.node {
-            &ast::ExprLit(ref item) => {
-                match &item.node {
-                    &ast::LitStr(ref s, _) => s,
-                    _ => panic!("Please provide simple literal path to migrations")
-                }
-            },
-            _ => {
-                panic!("Please provide simple literal path to migrations")
-            }
-        };
-
-        MigrationState{
-            path: ::std::env::current_dir().map(|dir| dir.join(&Path::new(path))).unwrap()
         }
     }
 }

@@ -1,22 +1,12 @@
 use syntax::{ast, codemap};
-use syntax::ptr::P;
 use syntax::ext::base;
-use syntax::owned_slice::OwnedSlice;
-use syntax::codemap::Spanned;
-use syntax::ext::quote::rt::ExtParseUtils;
 use syntax::ext::quote::rt::ToSource;
 
 use syntax::ext::build::AstBuilder;
 
-use std::ascii::AsciiExt;
+use super::super::helpers;
 
-use plugin::model::{ModelState, MigrationState};
-
-pub trait Generate<Cfg> {
-    fn generate<'a>(self, codemap::Span, &mut base::ExtCtxt, Cfg) -> Box<base::MacResult + 'a>;
-}
-
-impl Generate<()> for ModelState {
+impl super::super::Generator<()> for super::ModelState {
     fn generate<'a>(self, sp: codemap::Span, cx: &mut base::ExtCtxt, _: ()) -> Box<base::MacResult + 'a> {
         let name = self.mod_name.clone();
         let struct_name = self.model.ident.clone().name.as_str().to_string();
@@ -72,7 +62,7 @@ impl Generate<()> for ModelState {
 
         let mut impls = vec![];
 
-        let impl_mac = generate_macro_invocation(cx, "define_model", ty_def_macro_body, sp);
+        let impl_mac = helpers::generate_macro_invocation(cx, "define_model", ty_def_macro_body, sp);
         impls.push(impl_mac);
 
         match self.primary_key {
@@ -80,7 +70,7 @@ impl Generate<()> for ModelState {
             Some(ref primary_key) if primary_key.is_empty() => panic!("Please provide primary key for {}", struct_name),
             Some(ref primary_key) => {
                 let lookup_predicate = generate_lookup_predicate(&struct_name, primary_key);
-                let impl_primary_key_mac = generate_macro_invocation(cx, "primary_key", format!("self, {}, {}", 
+                let impl_primary_key_mac = helpers::generate_macro_invocation(cx, "primary_key", format!("self, {}, {}", 
                     struct_name,
                     lookup_predicate
                 ), sp);
@@ -102,71 +92,4 @@ fn generate_lookup_predicate(struct_name: &String, primary_key: &Vec<String>) ->
         )
     }).collect();
     format!("{{{}}}", keys.connect(".and"))
-}
-
-impl Generate<()> for MigrationState {
-    fn generate<'a>(self, sp: codemap::Span, cx: &mut base::ExtCtxt, _: ()) -> Box<base::MacResult + 'a> {
-
-        let pathes = ::std::old_io::fs::readdir(&self.path).unwrap();
-        let mut migrations = vec![];
-
-        let path_checker = regex!(r"^_(\d{12})");
-        let upcaser = regex!(r"_([a-z])");
-
-        for path in pathes.iter() {
-            let filestem = path.filestem_str().unwrap();
-            let captures = path_checker.captures(filestem);
-
-            if captures.is_none() { continue };
-
-            let captures = captures.expect("Mailformed migration name");
-            let tm = captures.at(1).expect("Timestamp must exists");
-            let version: u64 = tm.parse().ok().expect("Timestamp must be valid u64");
-            let name = filestem.replace(captures.at(0).unwrap(), "");
-
-            let name = upcaser.replace_all(name.as_slice(), |caps: &::regex::Captures| {
-                caps.at(1).unwrap().to_ascii_uppercase()
-            });
-
-            migrations.push(format!("{:?}", (filestem.to_string(), version, name.to_string())));
-        }
-
-        let macro_body = migrations.connect(", ");
-
-        let mut impls = vec![];
-        impls.push(generate_macro_invocation(cx, "migrations", macro_body, sp));
-        base::MacItems::new(impls.into_iter())
-
-    }
-}
-
-fn generate_macro_invocation(cx: &mut base::ExtCtxt, macro_name: &str, macro_body: String, sp: codemap::Span) -> P<ast::Item> {
-    P(ast::Item {
-        ident: cx.ident_of(""),
-        attrs: vec![],
-        id: ast::DUMMY_NODE_ID,
-        node: ast::ItemMac(Spanned{
-            node: ast::MacInvocTT(
-                ast::Path {
-                    span: sp,
-                    global: false,
-                    segments: vec![ast::PathSegment{
-                        identifier: cx.ident_of(macro_name),
-                        parameters: ast::AngleBracketedParameters(
-                            ast::AngleBracketedParameterData {
-                                lifetimes: vec![],
-                                types: OwnedSlice::empty(),
-                                bindings: OwnedSlice::empty()
-                            }
-                        )
-                    }]
-                },
-                cx.parse_tts(macro_body),
-                0
-            ),
-            span: sp
-        }),
-        vis: ast::Public,
-        span: sp
-    })
 }

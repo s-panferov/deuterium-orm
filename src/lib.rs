@@ -28,8 +28,8 @@ extern crate deuterium;
 #[cfg(feature = "postgres")]
 pub use adapter::postgres::*;
 
-pub mod adapter;
-pub mod migration;
-pub mod plugin;
+#[macro_use] pub mod adapter;
+#[macro_use] pub mod migration;
+#[macro_use] pub mod plugin;
 
 
