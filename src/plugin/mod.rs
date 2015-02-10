@@ -7,8 +7,8 @@ use syntax::ext::base;
 use syntax::parse::parser;
 
 #[macro_use] mod helpers;
-mod model;
-mod migration;
+#[macro_use] mod model;
+#[macro_use] mod migration;
 
 #[plugin_registrar]
 #[doc(hidden)]

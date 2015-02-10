@@ -29,7 +29,7 @@ impl super::super::Generator<()> for super::MigrationState {
                 caps.at(1).unwrap().to_ascii_uppercase()
             });
 
-            migrations.push(format!("{:?}", (filestem.to_string(), version, name.to_string())));
+            migrations.push(format!("({}, {}, {})", filestem.to_string(), version, name.to_string()));
         }
 
         let macro_body = migrations.connect(", ");

@@ -3,6 +3,7 @@ use syntax::ext::base;
 
 use super::Generator;
 
+#[macro_use] mod macro_ext;
 mod parser;
 mod generator;
 
