@@ -3,7 +3,9 @@
 #![feature(core)]
 #![feature(test)]
 
-#[plugin] #[macro_use] extern crate deuterium_orm;
+#![plugin(deuterium_orm)]
+
+#[macro_use] extern crate deuterium_orm;
 extern crate time;
 extern crate deuterium;
 
@@ -70,7 +72,7 @@ fn setup_tables(cn: &Connection) {
             force_level integer NOT NULL,
             side        SMALLINT NOT NULL,
             created_at  timestamptz DEFAULT CURRENT_TIMESTAMP NOT NULL,
-            updated_at  timestamptz DEFAULT CURRENT_TIMESTAMP NOT NULL 
+            updated_at  timestamptz DEFAULT CURRENT_TIMESTAMP NOT NULL
         );
 
         INSERT INTO jedi (name, force_level, side) VALUES
@@ -111,12 +113,12 @@ fn select() {
     setup_tables(&*cn);
 
     assert_eq!((query_models!(
-        &Jedi::ordered().where_(Jedi::side_f().is(Side::LightSide)), 
+        &Jedi::ordered().where_(Jedi::side_f().is(Side::LightSide)),
         &*cn, &[]
     )).len(), 4);
 
     let anakin = (query_model!(
-        &Jedi::ordered().where_(Jedi::name_f().is("Anakin Skywalker".to_string())).first(), 
+        &Jedi::ordered().where_(Jedi::name_f().is("Anakin Skywalker".to_string())).first(),
         &*cn, &[]
     )).unwrap();
 
@@ -138,7 +140,7 @@ fn insert() {
     assert_eq!(exec_pg!(&jedi.create_query(), &*cn, &[]), 1);
 
     let olmos = (query_model!(
-        &Jedi::table().select_all().where_(Jedi::name_f().is("Pants Olmos".to_string())).first(), 
+        &Jedi::table().select_all().where_(Jedi::name_f().is("Pants Olmos".to_string())).first(),
         &*cn, &[]
     )).unwrap();
 
@@ -154,7 +156,7 @@ fn update() {
     setup_tables(&*cn);
 
     let mut anakin = (query_model!(
-        &Jedi::table().select_all().where_(Jedi::name_f().is("Anakin Skywalker".to_string())).first(), 
+        &Jedi::table().select_all().where_(Jedi::name_f().is("Anakin Skywalker".to_string())).first(),
         &*cn, &[]
     )).unwrap();
 
@@ -171,7 +173,7 @@ fn delete() {
     setup_tables(&*cn);
 
     let mut anakin = (query_model!(
-        &Jedi::table().select_all().where_(Jedi::name_f().is("Anakin Skywalker".to_string())).first(), 
+        &Jedi::table().select_all().where_(Jedi::name_f().is("Anakin Skywalker".to_string())).first(),
         &*cn, &[]
     )).unwrap();
 
