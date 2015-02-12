@@ -8,6 +8,8 @@
 #![feature(env)]
 #![feature(io)]
 
+#![plugin(regex_macros)]
+
 #[cfg(feature = "postgres")]
 extern crate postgres;
 #[cfg(feature = "postgres")]
@@ -19,8 +21,6 @@ extern crate time;
 extern crate rustc;
 extern crate syntax;
 
-#[plugin]
-extern crate regex_macros;
 extern crate regex;
 
 extern crate deuterium;
