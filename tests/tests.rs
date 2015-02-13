@@ -3,7 +3,7 @@
 #![feature(core)]
 #![feature(test)]
 
-#![plugin(deuterium_orm)]
+#![plugin(deuterium_plugin)]
 
 #[macro_use] extern crate deuterium_orm;
 extern crate time;

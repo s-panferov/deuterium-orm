@@ -10,7 +10,6 @@ license = "MIT"
 [lib]
 name = "deuterium_orm"
 path = "src/lib.rs"
-plugin = true
 
 [features]
 default = ["pg"]
@@ -23,9 +22,7 @@ name = "tests"
 regex = "*"
 regex_macros = "*"
 time = "*"
-
-[dependencies.deuterium]
-version = "*"
+deuterium = "*"
 
 [dependencies.postgres]
 version = "*"

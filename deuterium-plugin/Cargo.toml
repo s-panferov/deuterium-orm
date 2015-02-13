@@ -1,0 +1,18 @@
+[package]
+
+name = "deuterium_plugin"
+version = "0.3.2"
+description = "Compiler plugin for Deuterium ORM"
+authors = ["Stanislav Panferov <fnight.m@gmail.com>"]
+keywords = ["sql", "orm"]
+license = "MIT"
+
+[lib]
+name = "deuterium_plugin"
+path = "src/lib.rs"
+plugin = true
+
+[dependencies]
+regex = "*"
+regex_macros = "*"
+time = "*"
