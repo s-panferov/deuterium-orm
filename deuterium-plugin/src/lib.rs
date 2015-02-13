@@ -1,6 +1,19 @@
+#![feature(plugin)]
+#![feature(plugin_registrar)]
+#![feature(rustc_private)]
+#![feature(path)]
+#![feature(core)]
+#![feature(io)]
+#![feature(env)]
+#![feature(std_misc)]
+#![plugin(regex_macros)]
+
+extern crate syntax;
+extern crate rustc;
+extern crate regex;
+
 use rustc::plugin;
 use syntax::parse::token;
-use syntax;
 
 use syntax::{codemap};
 use syntax::ext::base;
@@ -13,10 +26,10 @@ use syntax::parse::parser;
 #[plugin_registrar]
 #[doc(hidden)]
 pub fn plugin_registrar(reg: &mut plugin::Registry) {
-    reg.register_syntax_extension(token::intern("deuterium_model"), 
+    reg.register_syntax_extension(token::intern("deuterium_model"),
         syntax::ext::base::IdentTT(Box::new(model::model), None));
 
-    reg.register_syntax_extension(token::intern("load_migrations"), 
+    reg.register_syntax_extension(token::intern("load_migrations"),
         syntax::ext::base::NormalTT(Box::new(migration::migration), None));
 }
 

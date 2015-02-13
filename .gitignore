@@ -1,4 +1,4 @@
 /target
 /Cargo.lock
-/plugin/target
-/plugin/Cargo.lock
+/deuterium-plugin/target
+/deuterium-plugin/Cargo.lock
