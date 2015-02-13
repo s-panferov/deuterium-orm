@@ -2,9 +2,11 @@
 #![feature(env)]
 #![feature(core)]
 #![feature(test)]
+#![feature(io)]
 
 #![plugin(deuterium_plugin)]
 
+#[macro_use] extern crate deuterium_plugin;
 #[macro_use] extern crate deuterium_orm;
 extern crate time;
 extern crate deuterium;
@@ -89,7 +91,7 @@ fn setup_tables(cn: &Connection) {
 
 fn setup_pg() -> adapter::postgres::PostgresPool {
 
-    let connection_uri = match env::var_string("POSTGRES_CONNECTION") {
+    let connection_uri = match env::var("POSTGRES_CONNECTION") {
         Ok(val) => val,
         Err(_) => "postgres://localhost/jedi".to_string()
     };
