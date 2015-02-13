@@ -1,7 +1,7 @@
 [package]
 
 name = "deuterium_orm"
-version = "0.4.0"
+version = "0.4.1"
 description = "Simple ORM for Rust"
 authors = ["Stanislav Panferov <fnight.m@gmail.com>"]
 keywords = ["sql", "orm"]
