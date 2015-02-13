@@ -2,8 +2,6 @@
 #![feature(plugin)]
 #![feature(core)]
 #![feature(path)]
-#![feature(std_misc)]
-#![feature(env)]
 #![feature(io)]
 
 #![plugin(regex_macros)]
