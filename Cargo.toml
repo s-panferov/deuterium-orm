@@ -23,6 +23,8 @@ regex = "*"
 regex_macros = "*"
 time = "*"
 deuterium = "*"
+
+[dev-dependencies]
 deuterium_plugin = "*"
 
 [dependencies.postgres]
