@@ -97,11 +97,9 @@ fn setup_pg() -> adapter::postgres::PostgresPool {
     };
 
     let manager = r2d2_postgres::PostgresConnectionManager::new(connection_uri.as_slice(), ::postgres::SslMode::None);
-    let config = r2d2::Config {
-        pool_size: 5,
-        test_on_check_out: true,
-        ..std::default::Default::default()
-    };
+    let config = r2d2::Config::builder()
+        .pool_size(5)
+        .build();
 
     let handler = Box::new(r2d2::NoopErrorHandler);
     r2d2::Pool::new(config, manager, handler).unwrap()
