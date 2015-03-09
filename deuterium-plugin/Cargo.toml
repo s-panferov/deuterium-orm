@@ -1,7 +1,7 @@
 [package]
 
 name = "deuterium_plugin"
-version = "0.3.3"
+version = "0.3.4"
 description = "Compiler plugin for Deuterium ORM"
 authors = ["Stanislav Panferov <fnight.m@gmail.com>"]
 keywords = ["sql", "orm"]
