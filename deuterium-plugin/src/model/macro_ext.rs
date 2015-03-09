@@ -5,13 +5,13 @@ macro_rules! define_model {
         $model:ident,
         $model_meta:ident,
         // Name of table-helper, e.g. `JediTable`
-        $table:ident, 
+        $table:ident,
         // Name of table-helper `ManySelectQueryExt` trait e.g. `JediTableManySelectQueryExt`
         $many_select_query_ext:ident,
-        // Name of table-helper `OneSelectQueryExt` trait e.g. `JediTableOneSelectQueryExt` 
-        $one_select_query_ext:ident, 
+        // Name of table-helper `OneSelectQueryExt` trait e.g. `JediTableOneSelectQueryExt`
+        $one_select_query_ext:ident,
         // Table name in database
-        $table_name:expr, 
+        $table_name:expr,
         // Collection of fields
         [ $((
             $field_name:ident, // Field name, e.g. id
@@ -39,7 +39,7 @@ macro_rules! define_model {
         pub struct $model_meta {
             $(
                 $field_changed_flag: bool,
-            )+  
+            )+
             changed: bool,
         }
 
@@ -49,7 +49,7 @@ macro_rules! define_model {
                     $(
                         // FIXME a macros issue don't allows to use `false` here
                         $field_changed_flag: !true,
-                    )+  
+                    )+
                     changed: false,
                 }
             }
@@ -64,7 +64,7 @@ macro_rules! define_model {
         pub struct $model {
             $(
                 $field_name: Option<$field_type>,
-            )+  
+            )+
             __meta: $model_meta
         }
 
@@ -90,7 +90,7 @@ macro_rules! define_model {
                 pub fn $field_changed_accessor(&self) -> bool {
                     self.__meta.$field_changed_flag
                 }
-            )+  
+            )+
 
             // Generate method to create empty model instance. `Empty` here means that all the fields
             // are in undefined state and all dirty bits are disabled.
@@ -133,7 +133,7 @@ macro_rules! define_model {
             }
         }
 
-        // We also generate ModelTable struct to deal with requests. 
+        // We also generate ModelTable struct to deal with requests.
 
         #[derive(Clone)]
         pub struct $table(::deuterium::TableDef);
@@ -157,50 +157,50 @@ macro_rules! define_model {
                 pub fn $field_name_f() -> ::deuterium::NamedField<$field_type> {
                     ::deuterium::NamedField::<$field_type>::new(stringify!($field_name), $model::table_name())
                 }
-            )+   
+            )+
 
             fn call_before_create_hooks(&mut self) {
                 $(
                     $before_create(self);
-                )*  
-            }       
+                )*
+            }
 
             fn call_after_create_hooks(&mut self) {
-                unimplemented!() 
-            }    
+                unimplemented!()
+            }
 
             fn call_before_save_hooks(&mut self) {
                 $(
                     $before_save(self);
-                )*  
+                )*
             }
 
             fn call_after_save_hooks(&mut self) {
-                unimplemented!() 
+                unimplemented!()
             }
 
             fn call_before_update_hooks(&mut self) {
-                unimplemented!() 
+                unimplemented!()
             }
 
             fn call_after_update_hooks(&mut self) {
-                unimplemented!() 
+                unimplemented!()
             }
 
             fn call_before_destroy_hooks(&mut self) {
-                unimplemented!() 
+                unimplemented!()
             }
 
             fn call_after_destroy_hooks(&mut self) {
-                unimplemented!() 
+                unimplemented!()
             }
 
             pub fn create_query(&mut self) -> ::deuterium::InsertQuery<(), (), $model, (), ()> {
                 let query = {
                     let mut fields: Vec<::deuterium::BoxedField> = vec![];
                     let mut values: Vec<&::deuterium::Expression<::deuterium::RawExpression>> = vec![];
-                    
-                    self.call_before_create_hooks();         
+
+                    self.call_before_create_hooks();
                     self.call_before_save_hooks();
 
                     $(
@@ -210,7 +210,7 @@ macro_rules! define_model {
                             fields.push(Box::new($field_name));
                             values.push(self.$field_get().as_expr());
                         }
-                    )+  
+                    )+
 
                     let mut query = $model::table().insert_fields(fields.iter().map(|f| &**f).collect::<Vec<&::deuterium::Field>>().as_slice());
                     query.push_untyped(values.as_slice());
@@ -221,7 +221,7 @@ macro_rules! define_model {
                     if self.__meta.$field_changed_flag == true {
                         self.__meta.$field_changed_flag = false;
                     }
-                )+  
+                )+
 
                 query
             }
@@ -238,10 +238,10 @@ macro_rules! define_model {
                         query = query.field(field);
                         self.__meta.$field_changed_flag = false;
                     }
-                )+ 
+                )+
 
                 query.where_(self.lookup_predicate())
-            }   
+            }
 
             pub fn delete_query(&mut self) -> ::deuterium::DeleteQuery<(), ::deuterium::NoResult, $model> {
                 $model::table().delete().where_(self.lookup_predicate())
@@ -251,7 +251,7 @@ macro_rules! define_model {
 
         impl ::deuterium::Table for $table {
             fn upcast_table(&self) -> ::deuterium::SharedTable {
-                ::std::rc::Rc::new(box self.clone() as ::deuterium::BoxedTable)
+                ::std::rc::Rc::new(Box::new(self.clone()) as ::deuterium::BoxedTable)
             }
 
             fn get_table_name(&self) -> &String {
@@ -269,7 +269,7 @@ macro_rules! define_model {
                 pub fn $field_name_f(&self) -> ::deuterium::NamedField<$field_type> {
                     ::deuterium::NamedField::<$field_type>::field_of(stringify!($field_name), self)
                 }
-            )+  
+            )+
         }
 
         impl ::deuterium::From for $table {
@@ -278,11 +278,11 @@ macro_rules! define_model {
             }
 
             fn upcast_from(&self) -> ::deuterium::SharedFrom {
-                ::std::rc::Rc::new(box self.clone() as ::deuterium::BoxedFrom)
+                ::std::rc::Rc::new(Box::new(self.clone()) as ::deuterium::BoxedFrom)
             }
         }
 
-        // Implement an ability to produce typed Deuterium queries. 
+        // Implement an ability to produce typed Deuterium queries.
 
         impl ::deuterium::Selectable<$model> for $table { }
         impl ::deuterium::Updatable<$model> for $table { }

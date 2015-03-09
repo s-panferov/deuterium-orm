@@ -13,14 +13,14 @@ macro_rules! migrations {
                 let migration = ::deuterium_orm::migration::Migration::new(
                     $ver,
                     name,
-                    box $m::$name as Box<::deuterium_orm::migration::RawMigration<::postgres::Connection>>
+                    Box::new($m::$name) as Box<::deuterium_orm::migration::RawMigration<::postgres::Connection>>
                 );
 
-                migrations.push(box migration);   
+                migrations.push(Box::new(migration));
             )*
 
             migrations
         }
-        
+
     )
 }
