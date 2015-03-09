@@ -1,7 +1,7 @@
 use syntax::{ast, codemap};
 use syntax::ext::base;
+use syntax::util::small_vector;
 use syntax::ext::quote::rt::ToSource;
-
 use syntax::ext::build::AstBuilder;
 
 use super::super::helpers;
@@ -79,7 +79,7 @@ impl super::super::Generator<()> for super::ModelState {
             }
         }
 
-        base::MacItems::new(impls.into_iter())
+        base::MacEager::items(small_vector::SmallVector::many(impls))
     }
 }
 

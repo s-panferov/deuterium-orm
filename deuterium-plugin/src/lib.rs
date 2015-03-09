@@ -3,9 +3,6 @@
 #![feature(rustc_private)]
 #![feature(path)]
 #![feature(core)]
-#![feature(io)]
-#![feature(env)]
-#![feature(std_misc)]
 #![plugin(regex_macros)]
 
 extern crate syntax;
@@ -27,10 +24,10 @@ use syntax::parse::parser;
 #[doc(hidden)]
 pub fn plugin_registrar(reg: &mut plugin::Registry) {
     reg.register_syntax_extension(token::intern("deuterium_model"),
-        syntax::ext::base::IdentTT(Box::new(model::model), None));
+        syntax::ext::base::IdentTT(Box::new(model::model), None, false));
 
     reg.register_syntax_extension(token::intern("load_migrations"),
-        syntax::ext::base::NormalTT(Box::new(migration::migration), None));
+        syntax::ext::base::NormalTT(Box::new(migration::migration), None, false));
 }
 
 pub trait Parser<Cfg> {

@@ -20,7 +20,7 @@ impl<'a, 'b> super::super::Parser<(codemap::Span, &'a mut base::ExtCtxt<'b>)> fo
         };
 
         super::MigrationState{
-            path: ::std::env::current_dir().map(|dir| dir.join(&Path::new(path))).unwrap()
+            path: ::std::env::current_dir().map(|dir| dir.join(&::std::path::Path::new(&path.to_string()[..]))).unwrap()
         }
     }
 }
