@@ -74,7 +74,7 @@ pub fn from_row<T, L, M: FromRow>(query: &::deuterium::SelectQuery<T, L, M>, row
 #[macro_export]
 macro_rules! to_sql_string_pg {
     ($query:expr) => ({
-        let mut ctx = ::deuterium::SqlContext::new(box ::deuterium::sql::adapter::PostgreSqlAdapter);
+        let mut ctx = ::deuterium::SqlContext::new(Box::new(::deuterium::sql::adapter::PostgreSqlAdapter));
         $query.to_final_sql(&mut ctx)
     })
 }
@@ -107,7 +107,7 @@ macro_rules! query_pg {
 macro_rules! query_models_iter {
     ($query:expr, $cn:expr, $params:expr) => (
         query_pg!($query, $cn, $params, rows, {
-            rows.map(|row| {
+            rows.iter().map(|row| {
                 ::deuterium_orm::adapter::postgres::from_row($query, &row)
             })
         })
@@ -118,7 +118,7 @@ macro_rules! query_models_iter {
 macro_rules! query_models {
     ($query:expr, $cn:expr, $params:expr) => (
         query_pg!($query, $cn, $params, rows, {
-            let vec: Vec<_> = rows.map(|row| {
+            let vec: Vec<_> = rows.iter().map(|row| {
                 ::deuterium_orm::adapter::postgres::from_row($query, &row)
             }).collect();
             vec
@@ -130,7 +130,7 @@ macro_rules! query_models {
 macro_rules! query_model {
     ($query:expr, $cn:expr, $params:expr) => (
         query_pg!($query, $cn, $params, rows, {
-            rows.take(1).next().map(|row| {
+            rows.iter().take(1).next().map(|row| {
                 ::deuterium_orm::adapter::postgres::from_row($query, &row)
             })
         })
@@ -172,17 +172,17 @@ macro_rules! try_pg {
 macro_rules! deuterium_enum {
     ($en:ty) => (
         impl ::postgres::types::FromSql for $en {
-            fn from_sql(_ty: &::postgres::types::Type, raw: Option<&[u8]>) -> ::postgres::Result<$en> {
-                match raw {
-                    Some(ref buf) => {
-                        let mut reader = ::std::old_io::BufReader::new(&buf[]);
-                        Ok(::std::num::FromPrimitive::from_u8(try_pg!(reader.read_u8())).unwrap())
-                    },
-                    None => {
-                        Err(::postgres::Error::BadData)
-                    }
+            fn from_sql<R: ::std::io::Read>(ty: &::postgres::types::Type, raw: &mut R) -> ::postgres::Result<$en> {
+                use ::byteorder::{ReadBytesExt};
+                let val = raw.read_u8();
+                match val {
+                    Ok(val) => Ok(::std::num::FromPrimitive::from_u8(val).unwrap()),
+                    Err(_) => Err(::postgres::Error::WrongType(ty.clone()))
                 }
+            }
 
+            fn accepts(_ty: &::postgres::types::Type) -> bool {
+                true
             }
         }
 
@@ -200,7 +200,7 @@ macro_rules! deuterium_enum {
 
             fn upcast_expression(&self) -> SharedExpression {
                 let i = self.clone() as i16;
-                ::std::rc::Rc::new(box i as ::deuterium::BoxedExpression)
+                ::std::rc::Rc::new(Box::new(i) as ::deuterium::BoxedExpression)
             }
         }
 
@@ -211,7 +211,7 @@ macro_rules! deuterium_enum {
         impl ::deuterium::ToPredicateValue for $en {
             fn to_predicate_value(&self, ctx: &mut SqlContext) -> String {
                 let i = self.clone() as i16;
-                ctx.hold(box i)
+                ctx.hold(Box::new(i))
             }
         }
     )

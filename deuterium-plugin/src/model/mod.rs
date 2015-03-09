@@ -19,7 +19,7 @@ pub struct ModelState {
 
 pub fn model<'cx>(cx: &'cx mut base::ExtCtxt, sp: codemap::Span,
                 name: ast::Ident, tokens: Vec<ast::TokenTree>) -> Box<base::MacResult + 'cx> {
-    
+
     // Parse a full ModelState from the input, emitting errors if used incorrectly.
     let state: ModelState = super::Parser::parse(&mut parse::tts_to_parser(cx.parse_sess(), tokens, cx.cfg()), (sp, &mut*cx, Some(name)));
 

@@ -1,5 +1,7 @@
 use time::now_utc;
-use std::old_io;
+use std::io::Write;
+use std::fs;
+use std::path;
 use postgres;
 use std::collections;
 
@@ -13,11 +15,11 @@ pub fn gen_full_name(name: &str) -> String {
     format!("_{}_{}", gen_timecode(), name)
 }
 
-pub fn create_migration_file(name: &str, base_path: Path) -> String {
+pub fn create_migration_file(name: &str, base_path: path::PathBuf) -> String {
     let full_name = gen_full_name(name);
-    let final_path = base_path.join(format!("{}.rs", full_name));
+    let final_path = base_path.join(&format!("{}.rs", full_name)[..]);
 
-    let mut file = match old_io::File::open_mode(&final_path, old_io::Open, old_io::ReadWrite) {
+    let mut file = match fs::File::open(&final_path) {
         Ok(f) => f,
         Err(e) => panic!("file error: {}", e),
     };

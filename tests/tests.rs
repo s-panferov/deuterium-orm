@@ -1,15 +1,16 @@
 #![feature(plugin)]
-#![feature(env)]
 #![feature(core)]
 #![feature(test)]
 #![feature(io)]
 
 #![plugin(deuterium_plugin)]
 
+#[allow(plugin_as_library)]
 #[macro_use] extern crate deuterium_plugin;
 #[macro_use] extern crate deuterium_orm;
 extern crate time;
 extern crate deuterium;
+extern crate byteorder;
 
 extern crate postgres;
 extern crate r2d2;

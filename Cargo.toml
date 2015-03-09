@@ -23,9 +23,7 @@ regex = "*"
 regex_macros = "*"
 time = "*"
 deuterium = "*"
-
-[dev-dependencies]
-deuterium_plugin = "*"
+byteorder = "*"
 
 [dependencies.postgres]
 version = "*"
@@ -38,3 +36,6 @@ optional = true
 [dependencies.r2d2_postgres]
 version = "*"
 optional = true
+
+[dev-dependencies.deuterium_plugin]
+version = "*"

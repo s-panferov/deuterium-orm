@@ -16,6 +16,7 @@ extern crate time;
 
 extern crate regex;
 extern crate deuterium;
+extern crate byteorder;
 
 #[cfg(feature = "postgres")]
 pub use adapter::postgres::*;
