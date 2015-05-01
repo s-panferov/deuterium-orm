@@ -1,11 +1,10 @@
+use num::ToPrimitive;
 use time::now_utc;
 use std::io::Write;
 use std::fs;
 use std::path;
 use postgres;
 use std::collections;
-
-use std::num::ToPrimitive;
 
 pub fn gen_timecode() -> String {
     now_utc().strftime("%y%m%d%H%M%S").unwrap().to_string()

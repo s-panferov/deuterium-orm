@@ -24,6 +24,7 @@ regex_macros = "*"
 time = "*"
 deuterium = "*"
 byteorder = "*"
+num = "*"
 
 [dependencies.postgres]
 version = "*"
