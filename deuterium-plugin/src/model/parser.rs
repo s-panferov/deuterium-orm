@@ -10,25 +10,25 @@ impl<'a, 'b> super::super::Parser<(codemap::Span, &'a mut base::ExtCtxt<'b>, Opt
         let name = match name {
             Some(name) => name,
             None => {
-                parser.fatal("Name of the table must be present in model block")
+                panic!(parser.fatal("Name of the table must be present in model block"))
             }
         };
 
         // Guards on struct
-        let maybe_model_struct = parser.parse_item_with_outer_attributes();
+        let maybe_model_struct = parser.parse_item();
         let model_struct = match maybe_model_struct {
             Some(model_struct) => {
                 match model_struct.node {
                     ast::ItemStruct(_, _) => model_struct,
                     _ => {
                         let span = parser.span;
-                        parser.span_fatal(span, "Only struct can be presented in the body")
+                        panic!(parser.span_fatal(span, "Only struct can be presented in the body"))
                     }
                 }
             },
             None => {
                 let span = parser.span;
-                parser.span_fatal(span, "Please provide model struct")
+                panic!(parser.span_fatal(span, "Please provide model struct"))
             }
         };
 
