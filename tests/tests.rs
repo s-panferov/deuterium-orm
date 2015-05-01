@@ -175,10 +175,10 @@ fn delete() {
     let cn = pool.get().unwrap();
     setup_tables(&*cn);
 
-    let mut anakin = (query_model!(
-        &Jedi::table().select_all().where_(Jedi::name_f().is("Anakin Skywalker".to_string())).first(),
+    let mut darth = (query_model!(
+        &Jedi::table().select_all().where_(Jedi::name_f().is("Darth Maul".to_string())).first(),
         &*cn, &[]
     )).unwrap();
 
-    assert_eq!(exec_pg!(&anakin.delete_query(), &*cn, &[]), 1);
+    assert_eq!(exec_pg!(&darth.delete_query(), &*cn, &[]), 1);
 }
