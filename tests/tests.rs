@@ -26,7 +26,7 @@ use postgres::Connection;
 
 macro_rules! assert_sql {
     ($query:expr, $s:expr) => (
-        assert_eq!($query.to_final_sql().as_slice(), $s)
+        assert_eq!(&$query.to_final_sql(), $s)
     )
 }
 
@@ -97,7 +97,7 @@ fn setup_pg() -> adapter::postgres::PostgresPool {
         Err(_) => "postgres://localhost/jedi".to_string()
     };
 
-    let manager = r2d2_postgres::PostgresConnectionManager::new(connection_uri.as_slice(), ::postgres::SslMode::None);
+    let manager = r2d2_postgres::PostgresConnectionManager::new(&connection_uri[..], ::postgres::SslMode::None).unwrap();
     let config = r2d2::Config::builder()
         .pool_size(5)
         .build();

@@ -212,8 +212,8 @@ macro_rules! define_model {
                         }
                     )+
 
-                    let mut query = $model::table().insert_fields(fields.iter().map(|f| &**f).collect::<Vec<&::deuterium::Field>>().as_slice());
-                    query.push_untyped(values.as_slice());
+                    let mut query = $model::table().insert_fields(&fields.iter().map(|f| &**f).collect::<Vec<&::deuterium::Field>>());
+                    query.push_untyped(&values);
                     query
                 };
 

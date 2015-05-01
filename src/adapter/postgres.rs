@@ -32,7 +32,7 @@ impl PostgresAdapter {
         let mut ctx = SqlContext::new(Box::new(::deuterium::sql::adapter::PostgreSqlAdapter));
         let sql = query.to_final_sql(&mut ctx);
 
-        (ctx, cn.prepare(sql.as_slice()))
+        (ctx, cn.prepare(&sql))
     }
 
     pub fn prepare_params<'a>(
@@ -54,11 +54,11 @@ impl PostgresAdapter {
     }
 
     pub fn query<'conn, 'a>(stm: &'conn Statement<'conn>, params: &[&'a ToSql], ctx_params: &'a[Box<ToSql + 'static>]) -> PostgresResult<Rows<'conn>> {
-        stm.query(PostgresAdapter::prepare_params(params, ctx_params).as_slice())
+        stm.query(&PostgresAdapter::prepare_params(params, ctx_params))
     }
 
     pub fn execute<'conn, 'a>(stm: &'conn Statement<'conn>, params: &[&'a ToSql], ctx_params: &'a[Box<ToSql + 'static>]) -> PostgresResult<u64> {
-        stm.execute(PostgresAdapter::prepare_params(params, ctx_params).as_slice())
+        stm.execute(&PostgresAdapter::prepare_params(params, ctx_params))
     }
 }
 

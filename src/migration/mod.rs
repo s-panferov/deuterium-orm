@@ -43,7 +43,7 @@ impl<Conn> Migration<Conn> {
     }
 
     pub fn version(&self) -> &u64 { &self.version }
-    pub fn name(&self) -> &str { self.name.as_slice() }
+    pub fn name(&self) -> &str { &self.name }
     pub fn raw(&self) -> &Box<RawMigration<Conn> + 'static> { &self.raw }
 }
 

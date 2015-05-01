@@ -32,7 +32,7 @@ impl<'a, 'b> super::super::Parser<(codemap::Span, &'a mut base::ExtCtxt<'b>, Opt
             }
         };
 
-        let primary_key = model_struct.attrs.as_slice().iter()
+        let primary_key = model_struct.attrs.iter()
             .find(|at| at.check_name("primary_key"))
             .and_then(|at| {
                 let mi_vec: Vec<String> = at.meta_item_list().unwrap().iter().map(|mi| mi.name().to_string()).collect();
@@ -40,7 +40,7 @@ impl<'a, 'b> super::super::Parser<(codemap::Span, &'a mut base::ExtCtxt<'b>, Opt
             });
 
         let mut before_create = vec![];
-        for at in model_struct.attrs.as_slice().iter() {
+        for at in &model_struct.attrs {
             if at.check_name("before_create") {
                 for mi in at.meta_item_list().unwrap().iter() {
                     before_create.push(mi.name().to_string())
@@ -49,7 +49,7 @@ impl<'a, 'b> super::super::Parser<(codemap::Span, &'a mut base::ExtCtxt<'b>, Opt
         }
 
         let mut before_save = vec![];
-        for at in model_struct.attrs.as_slice().iter() {
+        for at in &model_struct.attrs {
             if at.check_name("before_save") {
                 for mi in at.meta_item_list().unwrap().iter() {
                     before_save.push(mi.name().to_string())
