@@ -1,8 +1,6 @@
 #![feature(plugin)]
 #![feature(plugin_registrar)]
 #![feature(rustc_private)]
-#![feature(path)]
-#![feature(core)]
 #![plugin(regex_macros)]
 
 extern crate syntax;

@@ -1,8 +1,5 @@
 #![feature(concat_idents)]
 #![feature(plugin)]
-#![feature(core)]
-#![feature(path)]
-#![feature(io)]
 
 #![plugin(regex_macros)]
 

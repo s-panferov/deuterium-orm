@@ -1,7 +1,5 @@
 #![feature(plugin)]
-#![feature(core)]
 #![feature(test)]
-#![feature(io)]
 
 #![plugin(deuterium_plugin)]
 
