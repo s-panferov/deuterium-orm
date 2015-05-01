@@ -175,7 +175,7 @@ macro_rules! deuterium_enum {
                 use ::byteorder::{ReadBytesExt};
                 let val = raw.read_u8();
                 match val {
-                    Ok(val) => Ok(::std::num::FromPrimitive::from_u8(val).unwrap()),
+                    Ok(val) => Ok(::num::FromPrimitive::from_u8(val).unwrap()),
                     Err(_) => Err(::postgres::Error::WrongType(ty.clone()))
                 }
             }

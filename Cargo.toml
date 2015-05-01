@@ -25,6 +25,7 @@ time = "*"
 deuterium = "*"
 byteorder = "*"
 num = "*"
+enum_primitive = "*"
 
 [dependencies.postgres]
 version = "*"

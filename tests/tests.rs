@@ -9,6 +9,8 @@
 extern crate time;
 extern crate deuterium;
 extern crate byteorder;
+extern crate num;
+#[macro_use] extern crate enum_primitive;
 
 extern crate postgres;
 extern crate r2d2;
@@ -28,10 +30,12 @@ macro_rules! assert_sql {
     )
 }
 
-#[derive(Clone, Debug, PartialEq, FromPrimitive)]
-pub enum Side {
-    DarkSide,
-    LightSide,
+enum_from_primitive! {
+    #[derive(Clone, Debug, PartialEq)]
+    pub enum Side {
+        DarkSide,
+        LightSide,
+    }
 }
 
 deuterium_enum!(Side);
