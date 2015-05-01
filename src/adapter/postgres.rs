@@ -1,4 +1,3 @@
-
 use postgres::{
     Rows,
     GenericConnection,

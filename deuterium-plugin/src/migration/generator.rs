@@ -43,4 +43,3 @@ impl super::super::Generator<()> for super::MigrationState {
 
     }
 }
-
