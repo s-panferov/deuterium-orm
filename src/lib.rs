@@ -1,8 +1,5 @@
 #![feature(concat_idents)]
 #![feature(plugin)]
-#![feature(core)]
-#![feature(path)]
-#![feature(io)]
 
 #![plugin(regex_macros)]
 
@@ -17,11 +14,10 @@ extern crate time;
 extern crate regex;
 extern crate deuterium;
 extern crate byteorder;
+extern crate num;
 
 #[cfg(feature = "postgres")]
 pub use adapter::postgres::*;
 
 #[macro_use] pub mod adapter;
 #[macro_use] pub mod migration;
-
-

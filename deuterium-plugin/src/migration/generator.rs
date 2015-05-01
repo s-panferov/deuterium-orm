@@ -28,7 +28,7 @@ impl super::super::Generator<()> for super::MigrationState {
             let version: u64 = tm.parse().ok().expect("Timestamp must be valid u64");
             let name = filestem.replace(captures.at(0).unwrap(), "");
 
-            let name = upcaser.replace_all(name.as_slice(), |caps: &::regex::Captures| {
+            let name = upcaser.replace_all(&name, |caps: &::regex::Captures| {
                 caps.at(1).unwrap().to_ascii_uppercase()
             });
 
@@ -43,4 +43,3 @@ impl super::super::Generator<()> for super::MigrationState {
 
     }
 }
-

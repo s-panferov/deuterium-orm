@@ -1,7 +1,5 @@
 #![feature(plugin)]
-#![feature(core)]
 #![feature(test)]
-#![feature(io)]
 
 #![plugin(deuterium_plugin)]
 
@@ -11,6 +9,8 @@
 extern crate time;
 extern crate deuterium;
 extern crate byteorder;
+extern crate num;
+#[macro_use] extern crate enum_primitive;
 
 extern crate postgres;
 extern crate r2d2;
@@ -26,14 +26,16 @@ use postgres::Connection;
 
 macro_rules! assert_sql {
     ($query:expr, $s:expr) => (
-        assert_eq!($query.to_final_sql().as_slice(), $s)
+        assert_eq!(&$query.to_final_sql(), $s)
     )
 }
 
-#[derive(Clone, Debug, PartialEq, FromPrimitive)]
-pub enum Side {
-    DarkSide,
-    LightSide,
+enum_from_primitive! {
+    #[derive(Clone, Debug, PartialEq)]
+    pub enum Side {
+        DarkSide,
+        LightSide,
+    }
 }
 
 deuterium_enum!(Side);
@@ -97,7 +99,7 @@ fn setup_pg() -> adapter::postgres::PostgresPool {
         Err(_) => "postgres://localhost/jedi".to_string()
     };
 
-    let manager = r2d2_postgres::PostgresConnectionManager::new(connection_uri.as_slice(), ::postgres::SslMode::None);
+    let manager = r2d2_postgres::PostgresConnectionManager::new(&connection_uri[..], ::postgres::SslMode::None).unwrap();
     let config = r2d2::Config::builder()
         .pool_size(5)
         .build();
@@ -173,10 +175,10 @@ fn delete() {
     let cn = pool.get().unwrap();
     setup_tables(&*cn);
 
-    let mut anakin = (query_model!(
-        &Jedi::table().select_all().where_(Jedi::name_f().is("Anakin Skywalker".to_string())).first(),
+    let mut darth = (query_model!(
+        &Jedi::table().select_all().where_(Jedi::name_f().is("Darth Maul".to_string())).first(),
         &*cn, &[]
     )).unwrap();
 
-    assert_eq!(exec_pg!(&anakin.delete_query(), &*cn, &[]), 1);
+    assert_eq!(exec_pg!(&darth.delete_query(), &*cn, &[]), 1);
 }

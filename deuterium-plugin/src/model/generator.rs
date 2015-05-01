@@ -1,8 +1,8 @@
 use syntax::{ast, codemap};
 use syntax::ext::base;
 use syntax::util::small_vector;
-use syntax::ext::quote::rt::ToSource;
 use syntax::ext::build::AstBuilder;
+use syntax::print::pprust;
 
 use super::super::helpers;
 
@@ -19,7 +19,7 @@ impl super::super::Generator<()> for super::ModelState {
 
         let mut ts_fields = vec![];
         for field in model_struct_def.fields.iter() {
-            let field_ty = field.node.ty.to_source();
+            let field_ty = pprust::ty_to_string(&*field.node.ty);
 
             // Name table field as model field
             let (field_name, visibility) = match field.node.kind {

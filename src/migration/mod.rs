@@ -1,11 +1,10 @@
+use num::ToPrimitive;
 use time::now_utc;
 use std::io::Write;
 use std::fs;
 use std::path;
 use postgres;
 use std::collections;
-
-use std::num::ToPrimitive;
 
 pub fn gen_timecode() -> String {
     now_utc().strftime("%y%m%d%H%M%S").unwrap().to_string()
@@ -44,7 +43,7 @@ impl<Conn> Migration<Conn> {
     }
 
     pub fn version(&self) -> &u64 { &self.version }
-    pub fn name(&self) -> &str { self.name.as_slice() }
+    pub fn name(&self) -> &str { &self.name }
     pub fn raw(&self) -> &Box<RawMigration<Conn> + 'static> { &self.raw }
 }
 

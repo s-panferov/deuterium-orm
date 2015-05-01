@@ -1,4 +1,3 @@
-
 use postgres::{
     Rows,
     GenericConnection,
@@ -16,7 +15,7 @@ pub type PostgresPooledConnection<'a> = ::r2d2::PooledConnection<
 >;
 
 pub fn setup(cn_str: &str, pool_size: u32) -> PostgresPool {
-    let manager = ::r2d2_postgres::PostgresConnectionManager::new(cn_str, ::postgres::SslMode::None);
+    let manager = ::r2d2_postgres::PostgresConnectionManager::new(cn_str, ::postgres::SslMode::None).unwrap();
     let config = ::r2d2::Config::builder()
         .pool_size(pool_size)
         .build();
@@ -33,7 +32,7 @@ impl PostgresAdapter {
         let mut ctx = SqlContext::new(Box::new(::deuterium::sql::adapter::PostgreSqlAdapter));
         let sql = query.to_final_sql(&mut ctx);
 
-        (ctx, cn.prepare(sql.as_slice()))
+        (ctx, cn.prepare(&sql))
     }
 
     pub fn prepare_params<'a>(
@@ -55,11 +54,11 @@ impl PostgresAdapter {
     }
 
     pub fn query<'conn, 'a>(stm: &'conn Statement<'conn>, params: &[&'a ToSql], ctx_params: &'a[Box<ToSql + 'static>]) -> PostgresResult<Rows<'conn>> {
-        stm.query(PostgresAdapter::prepare_params(params, ctx_params).as_slice())
+        stm.query(&PostgresAdapter::prepare_params(params, ctx_params))
     }
 
     pub fn execute<'conn, 'a>(stm: &'conn Statement<'conn>, params: &[&'a ToSql], ctx_params: &'a[Box<ToSql + 'static>]) -> PostgresResult<u64> {
-        stm.execute(PostgresAdapter::prepare_params(params, ctx_params).as_slice())
+        stm.execute(&PostgresAdapter::prepare_params(params, ctx_params))
     }
 }
 
@@ -176,7 +175,7 @@ macro_rules! deuterium_enum {
                 use ::byteorder::{ReadBytesExt};
                 let val = raw.read_u8();
                 match val {
-                    Ok(val) => Ok(::std::num::FromPrimitive::from_u8(val).unwrap()),
+                    Ok(val) => Ok(::num::FromPrimitive::from_u8(val).unwrap()),
                     Err(_) => Err(::postgres::Error::WrongType(ty.clone()))
                 }
             }
