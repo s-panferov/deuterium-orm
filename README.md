@@ -1,7 +1,7 @@
 ## Run tests
 
 ```bash
-RUST_TEST_TASKS=1 POSTGRES_CONNECTION=postgres://{YOUR_USER}@localhost/jedi cargo test
+RUST_THREADS=1 POSTGRES_CONNECTION=postgres://{YOUR_USER}@localhost/jedi cargo test
 ```
 
 ## Examples
