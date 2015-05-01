@@ -15,7 +15,7 @@ pub type PostgresPooledConnection<'a> = ::r2d2::PooledConnection<
 >;
 
 pub fn setup(cn_str: &str, pool_size: u32) -> PostgresPool {
-    let manager = ::r2d2_postgres::PostgresConnectionManager::new(cn_str, ::postgres::SslMode::None);
+    let manager = ::r2d2_postgres::PostgresConnectionManager::new(cn_str, ::postgres::SslMode::None).unwrap();
     let config = ::r2d2::Config::builder()
         .pool_size(pool_size)
         .build();
