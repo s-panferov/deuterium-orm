@@ -1,9 +1,9 @@
 use postgres::{
-    Rows,
     GenericConnection,
     Statement
 };
 
+use postgres::rows::Rows;
 use postgres::Result as PostgresResult;
 use postgres::types::ToSql;
 use deuterium::{SqlContext, QueryToSql};
@@ -63,10 +63,10 @@ impl PostgresAdapter {
 }
 
 pub trait FromRow {
-    fn from_row<T, L>(query: &::deuterium::SelectQuery<T, L, Self>, row: &::postgres::Row) -> Self;
+    fn from_row<T, L>(query: &::deuterium::SelectQuery<T, L, Self>, row: &::postgres::rows::Row) -> Self;
 }
 
-pub fn from_row<T, L, M: FromRow>(query: &::deuterium::SelectQuery<T, L, M>, row: &::postgres::Row) -> M {
+pub fn from_row<T, L, M: FromRow>(query: &::deuterium::SelectQuery<T, L, M>, row: &::postgres::rows::Row) -> M {
     FromRow::from_row(query, row)
 }
 
