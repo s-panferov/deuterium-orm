@@ -18,7 +18,10 @@ impl super::super::Generator<()> for super::MigrationState {
         for path in pathes {
             let path = path.unwrap().path();
 
-            let filestem = path.into_os_string().into_string().unwrap();
+            let filestem = match path.file_stem() {
+                Some(f) => f.to_str().unwrap(),
+                None => { continue }
+            };
             let captures = path_checker.captures(&filestem[..]);
 
             if captures.is_none() { continue };
