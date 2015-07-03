@@ -18,7 +18,7 @@ pub fn create_migration_file(name: &str, base_path: path::PathBuf) -> String {
     let full_name = gen_full_name(name);
     let final_path = base_path.join(&format!("{}.rs", full_name)[..]);
 
-    let mut file = match fs::File::open(&final_path) {
+    let mut file = match fs::OpenOptions::new().create(true).write(true).open(&final_path) {
         Ok(f) => f,
         Err(e) => panic!("file error: {}", e),
     };
