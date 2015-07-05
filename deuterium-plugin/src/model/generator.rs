@@ -53,9 +53,10 @@ impl super::super::Generator<()> for super::ModelState {
             ts_name.clone() + "ManySelectQueryExt",
             ts_name.clone() + "OneSelectQueryExt",
             name.name.as_str(),
-            format!("[{}]", ts_fields.iter().map(|s|
-                format!("({})", &[&s.0, &s.1, &s.2, &s.3, &s.4, &s.5, &s.6, &s.7].connect(", "))
-            ).collect::<Vec<String>>().connect(", ")),
+            format!("[{}]", ts_fields.iter().map(|s| {
+                let a: &[&str] = &[&s.0, &s.1, &s.2, &s.3, &s.4, &s.5, &s.6, &s.7];
+                format!("({})", a.connect(", "))
+            }).collect::<Vec<String>>().connect(", ")),
             format!("[{}]", self.before_create.connect(", ")),
             format!("[{}]", self.before_save.connect(", "))
         );
